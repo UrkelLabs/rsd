@@ -1,0 +1,9 @@
+[package]
+name = "rust-handshake"
+version = "0.1.0"
+authors = ["Handshake Alliance"]
+edition = "2018"
+
+[dependencies]
+rust-crypto = "^0.2"
+
