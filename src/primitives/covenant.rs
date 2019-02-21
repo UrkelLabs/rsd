@@ -1,4 +1,5 @@
 use crypto::sha2::Sha256;
+use crate::Address;
 
 /// A Handshake covenant, which is a method of changing name state on the chain.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -93,8 +94,7 @@ pub struct Transfer {
     pub height: u32,
     //TODO verify type
     pub version: u32,
-    //TODO convert this to Address type.
-    pub address: String
+    pub address: Address
 }
 
 pub struct Finalize {
