@@ -1,30 +1,92 @@
 // use crypto::sha2::Sha256;
 
+use blake2::{Blake2b, Digest};
 
-// /// A block header, which contains all the block's information except
-// /// the actual transactions
-// // #[derive(Copy, PartialEq, Eq, Clone, Debug)]
-// pub struct BlockHeader {
-//     /// The protocol version.
-//     pub version: u32,
-//     /// Reference to the previous block in the chain
-//     pub prev_blockhash: Sha256,
-//     /// The root hash of the merkle tree of transactions in the block
-//     pub merkle_root: Sha256,
-//     /// The root hash of the Urkel Tree of name states in the block
-//     pub tree_root: Sha256,
-//     /// The root hash of the bloom filter XXX Need more here.
-//     pub filter_root: Sha256,
-//     /// A root reserved for future implementation of Neutrino on the protocol level
-//     pub reserved_root: Sha256,
-//     /// The timestamp of the block, as claimed by the miner
-//     pub time: u32,
-//     /// The target value below which the blockhash must lie, encoded as a
-//     /// a float (with well-defined rounding, of course)
-//     pub bits: u32,
-//     /// The nonce, selected to obtain a low enough blockhash
-//     pub nonce: u32,
-// }
+//TODO change this name
+use crate::primitives::buffer::Buffer;
+
+/// A block header, which contains all the block's information except
+/// the actual transactions
+// #[derive(Copy, PartialEq, Eq, Clone, Debug)]
+#[derive(Debug, Default)]
+pub struct BlockHeader {
+    /// The protocol version.
+    pub version: u32,
+    /// Reference to the previous block in the chain
+    pub prev_blockhash: Blake2b,
+    /// The root hash of the merkle tree of transactions in the block
+    pub merkle_root: Blake2b,
+    /// The root hash of the Urkel Tree of name states in the block
+    pub tree_root: Blake2b,
+    /// The root hash of the bloom filter XXX Need more here.
+    pub filter_root: Blake2b,
+    /// A root reserved for future implementation of Neutrino on the protocol level
+    pub reserved_root: Blake2b,
+    /// The timestamp of the block, as claimed by the miner
+    pub time: u64,
+    /// The target value below which the blockhash must lie, encoded as a
+    /// a float (with well-defined rounding, of course)
+    /// This should probably be a Compact type - See Parity Bitcoin //TODO
+    pub bits: u32,
+    /// The nonce, selected to obtain a low enough blockhash
+    pub nonce: u32,
+}
+
+impl BlockHeader {
+    // pub fn write(&self) ->
+    pub fn hash(&self) -> Blake2b {
+        dbg!(self);
+        dbg!(self.version.to_le_bytes());
+        // dbg!(
+        // let mut hasher = Blake2b::new();
+        // hasher.input(self.version);
+        // hasher.input(self.prev_blockhash);
+        // hasher.finalize();
+
+        // hasher.input(self)
+        Default::default()
+    }
+
+    pub fn as_hex(&self) -> String {
+        let mut buffer = Buffer::new();
+
+        buffer.write_u32(self.version);
+
+        buffer.as_hex()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BlockHeader;
+
+    #[test]
+    fn test_block_header_hex_default() {
+        let block_header = BlockHeader::default();
+
+        let hex = block_header.as_hex();
+
+        dbg!(hex);
+    }
+    #[test]
+    fn test_block_header_hash() {
+        let block_header = BlockHeader {
+            version: 1,
+            prev_blockhash: Default::default(),
+            merkle_root: Default::default(),
+            tree_root: Default::default(),
+            filter_root: Default::default(),
+            reserved_root: Default::default(),
+            time: 2,
+            bits: 3,
+            nonce: 4,
+        };
+
+        let hash = block_header.hash();
+        dbg!(hash);
+    }
+
+}
 
 // /// A block header with txcount attached, which is given in the `headers`
 // /// network message.
