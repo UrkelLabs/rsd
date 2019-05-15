@@ -52,7 +52,7 @@ impl BlockHeader {
 
         buffer.write_u32(self.version);
 
-        buffer.as_hex()
+        buffer.to_hex()
     }
 }
 
