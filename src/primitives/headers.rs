@@ -1,9 +1,11 @@
 // use crypto::sha2::Sha256;
 
-use blake2::{Blake2b, Digest};
+use cryptoxide::blake2b::Blake2b;
+use cryptoxide::digest::Digest;
 
-//TODO change this name
 use crate::primitives::buffer::Buffer;
+use crate::primitives::hash::Hash;
+use std::str;
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
@@ -13,15 +15,17 @@ pub struct BlockHeader {
     /// The protocol version.
     pub version: u32,
     /// Reference to the previous block in the chain
-    pub prev_blockhash: Blake2b,
+    pub prev_blockhash: Hash,
     /// The root hash of the merkle tree of transactions in the block
-    pub merkle_root: Blake2b,
+    pub merkle_root: Hash,
+
+    pub witness_root: Hash,
     /// The root hash of the Urkel Tree of name states in the block
-    pub tree_root: Blake2b,
+    pub tree_root: Hash,
     /// The root hash of the bloom filter XXX Need more here.
-    pub filter_root: Blake2b,
+    pub filter_root: Hash,
     /// A root reserved for future implementation of Neutrino on the protocol level
-    pub reserved_root: Blake2b,
+    pub reserved_root: Hash,
     /// The timestamp of the block, as claimed by the miner
     pub time: u64,
     /// The target value below which the blockhash must lie, encoded as a
@@ -29,21 +33,27 @@ pub struct BlockHeader {
     /// This should probably be a Compact type - See Parity Bitcoin //TODO
     pub bits: u32,
     /// The nonce, selected to obtain a low enough blockhash
-    pub nonce: u32,
+    //Change this to Buffer, or Bytes some kind of raw type. - let's see what the output of our kmac function is.
+    pub nonce: Hash,
 }
 
 impl BlockHeader {
-    // pub fn write(&self) ->
-    pub fn hash(&self) -> Blake2b {
-        dbg!(self);
-        dbg!(self.version.to_le_bytes());
-        // dbg!(
-        // let mut hasher = Blake2b::new();
-        // hasher.input(self.version);
-        // hasher.input(self.prev_blockhash);
-        // hasher.finalize();
+    pub fn hash(&self) -> Hash {
+        let mut hasher = Blake2b::new(32);
+        hasher.input(&hex::decode(self.as_hex()).unwrap());
+        // let hash = hasher.finalize();
+        let mut out = [0; 32];
 
-        // hasher.input(self)
+        hasher.result(&mut out);
+        // let hash = Hash::from(out);
+        // let hex = hex::decode(res).unwrap();
+        // dbg!(str::from_utf8(&res).unwrap());
+        // Hash::from()
+        // Default::default()
+        // let strs: Vec<String> = res.iter().map(|b| format!("{:02X}", b)).collect();
+        // strs.connect(" ");
+
+        dbg!(hex::encode(out));
         Default::default()
     }
 
@@ -51,6 +61,19 @@ impl BlockHeader {
         let mut buffer = Buffer::new();
 
         buffer.write_u32(self.version);
+        buffer.write_hash(self.prev_blockhash);
+        buffer.write_hash(self.merkle_root);
+        buffer.write_hash(self.witness_root);
+        buffer.write_hash(self.tree_root);
+        buffer.write_hash(self.filter_root);
+        buffer.write_hash(self.reserved_root);
+        buffer.write_u64(self.time);
+        //This will switch to write_compact when we convert the type TODO
+        buffer.write_u32(self.bits);
+        // buffer.write_u64(self.nonce as u64);
+        //Think we might want to change this to write Bytes or write Buffer.
+        //Because nonce is not *technically* a hash
+        buffer.write_hash(self.nonce);
 
         buffer.to_hex()
     }
@@ -58,7 +81,7 @@ impl BlockHeader {
 
 #[cfg(test)]
 mod tests {
-    use super::BlockHeader;
+    use super::*;
 
     #[test]
     fn test_block_header_hex_default() {
@@ -68,22 +91,62 @@ mod tests {
 
         dbg!(hex);
     }
+
     #[test]
-    fn test_block_header_hash() {
+    fn test_block_header_hex() {
         let block_header = BlockHeader {
             version: 1,
             prev_blockhash: Default::default(),
             merkle_root: Default::default(),
+            witness_root: Default::default(),
             tree_root: Default::default(),
             filter_root: Default::default(),
             reserved_root: Default::default(),
             time: 2,
             bits: 3,
-            nonce: 4,
+            nonce: Default::default(),
         };
 
+        let hex = block_header.as_hex();
+
+        dbg!(hex);
+    }
+
+    #[test]
+    fn test_block_header_hash() {
+        //Test mainnet genesis block
+        let block_header = BlockHeader {
+            version: 0,
+            prev_blockhash: Hash::from(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+            merkle_root: Hash::from(
+                "8e4c9756fef2ad10375f360e0560fcc7587eb5223ddf8cd7c7e06e60a1140b15",
+            ),
+            witness_root: Hash::from(
+                "7c7c2818c605a97178460aad4890df2afcca962cbcb639b812db0af839949798",
+            ),
+            tree_root: Hash::from(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+            filter_root: Hash::from(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+            reserved_root: Hash::from(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+
+            time: 1554268735,
+            bits: 486604799,
+            nonce: Hash::from("0000000000000000000000000000000000000000000000000000000000000000"),
+        };
+
+        let hex = block_header.as_hex();
+
+        dbg!(hex);
+
         let hash = block_header.hash();
-        dbg!(hash);
+        // dbg!(hash);
     }
 
 }
