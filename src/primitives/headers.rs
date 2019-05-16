@@ -53,8 +53,7 @@ impl BlockHeader {
         // let strs: Vec<String> = res.iter().map(|b| format!("{:02X}", b)).collect();
         // strs.connect(" ");
 
-        dbg!(hex::encode(out));
-        Default::default()
+        Hash::from(hex::encode(out))
     }
 
     pub fn as_hex(&self) -> String {
@@ -143,10 +142,14 @@ mod tests {
 
         let hex = block_header.as_hex();
 
-        dbg!(hex);
+        assert_eq!(hex, "0000000000000000000000000000000000000000000000000000000000000000000000008e4c9756fef2ad10375f360e0560fcc7587eb5223ddf8cd7c7e06e60a1140b157c7c2818c605a97178460aad4890df2afcca962cbcb639b812db0af8399497980000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003f42a45c00000000ffff001d0000000000000000000000000000000000000000000000000000000000000000");
 
         let hash = block_header.hash();
-        // dbg!(hash);
+
+        assert_eq!(
+            &hash.to_string(),
+            "b08ff0f0e33bca4cd80a7f1dda3f545a00b72a7a144b6b8d1a30150a78f7975c"
+        );
     }
 
 }
