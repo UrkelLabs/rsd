@@ -35,6 +35,22 @@ impl Buffer {
     }
 }
 
+//Allows Buffer to be used as a reference for a [u8] TODO double check this.
+//And thoroughly comment for everyone
+impl AsRef<[u8]> for Buffer {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+//Allows Buffer to be used as a mut for a [u8] TODO double check this.
+//And thoroughly comment for everyone
+impl AsMut<[u8]> for Buffer {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
