@@ -1,3 +1,4 @@
+use crate::primitives::hash::Hash;
 use hex::encode;
 
 //Our version of Buffer that is implemented in bio - > https://github.com/bcoin-org/bufio
@@ -15,6 +16,10 @@ impl Buffer {
         self.0.extend_from_slice(&data.to_le_bytes());
     }
 
+    pub fn write_hash(&mut self, hash: Hash) {
+        self.0.extend(&hash.to_array());
+    }
+
     //Return Hex string of the buffer.
     pub fn to_hex(&self) -> String {
         encode(&self.0)
@@ -29,6 +34,7 @@ impl Buffer {
 #[cfg(test)]
 mod tests {
     use super::Buffer;
+    use super::*;
 
     #[test]
     fn test_write_u32() {
@@ -39,6 +45,17 @@ mod tests {
         buffer.write_u32(version);
 
         assert_eq!(buffer, Buffer([21, 205, 91, 7].to_vec()));
+    }
+
+    #[test]
+    fn test_write_hash() {
+        let hash = Hash::from("bb42edce1895f9a969e81d7371ec113a0966e5d55035a84f87ca098e4f0a1a86");
+
+        let mut buffer = Buffer::new();
+
+        buffer.write_hash(hash);
+
+        dbg!(buffer);
     }
 
     #[test]
