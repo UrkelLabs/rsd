@@ -18,4 +18,4 @@ pub mod primitives;
 // pub use primitives::block::Block;
 pub use primitives::address::Address;
 pub use primitives::covenant::Covenant;
-
+pub use primitives::hash::Hash;
