@@ -16,6 +16,10 @@ impl Buffer {
         self.0.extend_from_slice(&data.to_le_bytes());
     }
 
+    pub fn write_u64(&mut self, data: u64) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
     pub fn write_hash(&mut self, hash: Hash) {
         self.0.extend(&hash.to_array());
     }
@@ -33,7 +37,6 @@ impl Buffer {
 
 #[cfg(test)]
 mod tests {
-    use super::Buffer;
     use super::*;
 
     #[test]
