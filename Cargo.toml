@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 # rust-crypto = "^0.2"
 blake2 = "0.8.0"
+cryptoxide = "0.1.1"
 hex = "0.3.2"
