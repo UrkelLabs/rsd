@@ -9,3 +9,5 @@ edition = "2018"
 blake2 = "0.8.0"
 cryptoxide = "0.1.1"
 hex = "0.3.2"
+num-bigint = "0.2"
+
