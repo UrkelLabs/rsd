@@ -1,5 +1,6 @@
 use crate::primitives::hash::Hash;
 use hex::encode;
+use std::ops;
 
 //Our version of Buffer that is implemented in bio - > https://github.com/bcoin-org/bufio
 #[derive(Default, Debug, PartialEq)]
@@ -32,6 +33,26 @@ impl Buffer {
     //Return Hex string of the buffer, Consumes the Hex
     pub fn into_hex(self) -> String {
         encode(self.0)
+    }
+}
+
+//Allows us to grab specific bytes from the buffer e.g.
+//grab the merkle tree from the middle of the buffer.
+impl ops::Deref for Buffer {
+    type Target = Vec<u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+//Allows us to grab specific bytes from the buffer e.g.
+//grab the merkle tree from the middle of the buffer.
+//Same as above, but allows us to grab those bytes and mutable, thus changing them without
+//having to allocate more mem.
+impl ops::DerefMut for Buffer {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
