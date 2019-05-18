@@ -4,4 +4,4 @@ pub mod buffer;
 pub mod covenant;
 pub mod hash;
 pub mod headers;
-// pub mod transaction;
+pub mod transaction;
