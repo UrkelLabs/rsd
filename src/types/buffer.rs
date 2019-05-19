@@ -25,6 +25,8 @@ impl Buffer {
         self.0.extend(&hash.to_array());
     }
 
+    // pub fn write_u256(&mut self, data: Uint
+
     //Return Hex string of the buffer.
     pub fn to_hex(&self) -> String {
         encode(&self.0)
