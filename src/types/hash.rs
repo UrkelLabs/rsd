@@ -1,5 +1,3 @@
-use hex::encode;
-
 #[derive(Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, Hash, Debug)]
 pub struct Hash([u8; 32]);
 

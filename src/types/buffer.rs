@@ -1,4 +1,4 @@
-use crate::primitives::hash::Hash;
+use crate::types::{Hash, Uint256};
 use hex::encode;
 use std::ops;
 
@@ -25,7 +25,7 @@ impl Buffer {
         self.0.extend(&hash.to_array());
     }
 
-    // pub fn write_u256(&mut self, data: Uint
+    pub fn write_u256(&mut self, data: Uint256) {}
 
     //Return Hex string of the buffer.
     pub fn to_hex(&self) -> String {

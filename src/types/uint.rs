@@ -542,9 +542,7 @@ impl fmt::Display for Uint256 {
 
 #[cfg(test)]
 mod tests {
-    // use consensus::encode::{deserialize, serialize};
-    // use util::uint::Uint256;
-    // use util::BitArray;
+    use super::*;
 
     #[test]
     pub fn uint256_bits_test() {
