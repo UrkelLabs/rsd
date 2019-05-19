@@ -17,365 +17,250 @@
 //! Implementation of a various large-but-fixed sized unsigned integer types.
 //! The functions here are designed to be fast.
 //!
+//!
+//!Edits to the original Implementation -> We don't use the u128 type at all so I see no need for a
+//!macro. I'd rather have the code easier to understand for a newcomer, then have a macro that is
+//!only used for one thing.
 
 use std::fmt;
 
-// use consensus::encode;
-// use util::BitArray;
+/// A trait which allows numbers to act as fixed-size bit arrays
+pub trait BitArray {
+    /// Is bit set?
+    fn bit(&self, idx: usize) -> bool;
 
-macro_rules! construct_uint {
-    ($name:ident, $n_words:expr) => {
-        /// Little-endian large integer type
-        #[repr(C)]
-        pub struct $name(pub [u64; $n_words]);
-        impl_array_newtype!($name, u64, $n_words);
+    /// Returns an array which is just the bits from start to end
+    fn bit_slice(&self, start: usize, end: usize) -> Self;
 
-        impl $name {
-            /// Conversion to u32
-            #[inline]
-            pub fn low_u32(&self) -> u32 {
-                let &$name(ref arr) = self;
-                arr[0] as u32
-            }
+    /// Bitwise and with `n` ones
+    fn mask(&self, n: usize) -> Self;
 
-            /// Conversion to u64
-            #[inline]
-            pub fn low_u64(&self) -> u64 {
-                let &$name(ref arr) = self;
-                arr[0] as u64
-            }
+    /// Trailing zeros
+    fn trailing_zeros(&self) -> usize;
 
-            /// Return the least number of bits needed to represent the number
-            #[inline]
-            pub fn bits(&self) -> usize {
-                let &$name(ref arr) = self;
-                for i in 1..$n_words {
-                    if arr[$n_words - i] > 0 {
-                        return (0x40 * ($n_words - i + 1))
-                            - arr[$n_words - i].leading_zeros() as usize;
-                    }
-                }
-                0x40 - arr[0].leading_zeros() as usize
-            }
+    /// Create all-zeros value
+    fn zero() -> Self;
 
-            /// Multiplication by u32
-            pub fn mul_u32(self, other: u32) -> $name {
-                let $name(ref arr) = self;
-                let mut carry = [0u64; $n_words];
-                let mut ret = [0u64; $n_words];
-                for i in 0..$n_words {
-                    let not_last_word = i < $n_words - 1;
-                    let upper = other as u64 * (arr[i] >> 32);
-                    let lower = other as u64 * (arr[i] & 0xFFFFFFFF);
-                    if not_last_word {
-                        carry[i + 1] += upper >> 32;
-                    }
-                    let (sum, overflow) = lower.overflowing_add(upper << 32);
-                    ret[i] = sum;
-                    if overflow && not_last_word {
-                        carry[i + 1] += 1;
-                    }
-                }
-                $name(ret) + $name(carry)
-            }
-
-            /// Create an object from a given unsigned 64-bit integer
-            pub fn from_u64(init: u64) -> Option<$name> {
-                let mut ret = [0; $n_words];
-                ret[0] = init;
-                Some($name(ret))
-            }
-
-            /// Create an object from a given signed 64-bit integer
-            pub fn from_i64(init: i64) -> Option<$name> {
-                assert!(init >= 0);
-                $name::from_u64(init as u64)
-            }
-        }
-
-        impl ::std::ops::Add<$name> for $name {
-            type Output = $name;
-
-            fn add(self, other: $name) -> $name {
-                let $name(ref me) = self;
-                let $name(ref you) = other;
-                let mut ret = [0u64; $n_words];
-                let mut carry = [0u64; $n_words];
-                let mut b_carry = false;
-                for i in 0..$n_words {
-                    ret[i] = me[i].wrapping_add(you[i]);
-                    if i < $n_words - 1 && ret[i] < me[i] {
-                        carry[i + 1] = 1;
-                        b_carry = true;
-                    }
-                }
-                if b_carry {
-                    $name(ret) + $name(carry)
-                } else {
-                    $name(ret)
-                }
-            }
-        }
-
-        impl ::std::ops::Sub<$name> for $name {
-            type Output = $name;
-
-            #[inline]
-            fn sub(self, other: $name) -> $name {
-                self + !other + BitArray::one()
-            }
-        }
-
-        impl ::std::ops::Mul<$name> for $name {
-            type Output = $name;
-
-            fn mul(self, other: $name) -> $name {
-                let mut me = $name::zero();
-                // TODO: be more efficient about this
-                for i in 0..(2 * $n_words) {
-                    let to_mul = (other >> (32 * i)).low_u32();
-                    me = me + (self.mul_u32(to_mul) << (32 * i));
-                }
-                me
-            }
-        }
-
-        impl ::std::ops::Div<$name> for $name {
-            type Output = $name;
-
-            fn div(self, other: $name) -> $name {
-                let mut sub_copy = self;
-                let mut shift_copy = other;
-                let mut ret = [0u64; $n_words];
-
-                let my_bits = self.bits();
-                let your_bits = other.bits();
-
-                // Check for division by 0
-                assert!(your_bits != 0);
-
-                // Early return in case we are dividing by a larger number than us
-                if my_bits < your_bits {
-                    return $name(ret);
-                }
-
-                // Bitwise long division
-                let mut shift = my_bits - your_bits;
-                shift_copy = shift_copy << shift;
-                loop {
-                    if sub_copy >= shift_copy {
-                        ret[shift / 64] |= 1 << (shift % 64);
-                        sub_copy = sub_copy - shift_copy;
-                    }
-                    shift_copy = shift_copy >> 1;
-                    if shift == 0 {
-                        break;
-                    }
-                    shift -= 1;
-                }
-
-                $name(ret)
-            }
-        }
-
-        impl BitArray for $name {
-            #[inline]
-            fn bit(&self, index: usize) -> bool {
-                let &$name(ref arr) = self;
-                arr[index / 64] & (1 << (index % 64)) != 0
-            }
-
-            #[inline]
-            fn bit_slice(&self, start: usize, end: usize) -> $name {
-                (*self >> start).mask(end - start)
-            }
-
-            #[inline]
-            fn mask(&self, n: usize) -> $name {
-                let &$name(ref arr) = self;
-                let mut ret = [0; $n_words];
-                for i in 0..$n_words {
-                    if n >= 0x40 * (i + 1) {
-                        ret[i] = arr[i];
-                    } else {
-                        ret[i] = arr[i] & ((1 << (n - 0x40 * i)) - 1);
-                        break;
-                    }
-                }
-                $name(ret)
-            }
-
-            #[inline]
-            fn trailing_zeros(&self) -> usize {
-                let &$name(ref arr) = self;
-                for i in 0..($n_words - 1) {
-                    if arr[i] > 0 {
-                        return (0x40 * i) + arr[i].trailing_zeros() as usize;
-                    }
-                }
-                (0x40 * ($n_words - 1)) + arr[$n_words - 1].trailing_zeros() as usize
-            }
-
-            fn zero() -> $name {
-                $name([0; $n_words])
-            }
-            fn one() -> $name {
-                $name({
-                    let mut ret = [0; $n_words];
-                    ret[0] = 1;
-                    ret
-                })
-            }
-        }
-
-        impl ::std::default::Default for $name {
-            fn default() -> $name {
-                BitArray::zero()
-            }
-        }
-
-        impl ::std::ops::BitAnd<$name> for $name {
-            type Output = $name;
-
-            #[inline]
-            fn bitand(self, other: $name) -> $name {
-                let $name(ref arr1) = self;
-                let $name(ref arr2) = other;
-                let mut ret = [0u64; $n_words];
-                for i in 0..$n_words {
-                    ret[i] = arr1[i] & arr2[i];
-                }
-                $name(ret)
-            }
-        }
-
-        impl ::std::ops::BitXor<$name> for $name {
-            type Output = $name;
-
-            #[inline]
-            fn bitxor(self, other: $name) -> $name {
-                let $name(ref arr1) = self;
-                let $name(ref arr2) = other;
-                let mut ret = [0u64; $n_words];
-                for i in 0..$n_words {
-                    ret[i] = arr1[i] ^ arr2[i];
-                }
-                $name(ret)
-            }
-        }
-
-        impl ::std::ops::BitOr<$name> for $name {
-            type Output = $name;
-
-            #[inline]
-            fn bitor(self, other: $name) -> $name {
-                let $name(ref arr1) = self;
-                let $name(ref arr2) = other;
-                let mut ret = [0u64; $n_words];
-                for i in 0..$n_words {
-                    ret[i] = arr1[i] | arr2[i];
-                }
-                $name(ret)
-            }
-        }
-
-        impl ::std::ops::Not for $name {
-            type Output = $name;
-
-            #[inline]
-            fn not(self) -> $name {
-                let $name(ref arr) = self;
-                let mut ret = [0u64; $n_words];
-                for i in 0..$n_words {
-                    ret[i] = !arr[i];
-                }
-                $name(ret)
-            }
-        }
-
-        impl ::std::ops::Shl<usize> for $name {
-            type Output = $name;
-
-            fn shl(self, shift: usize) -> $name {
-                let $name(ref original) = self;
-                let mut ret = [0u64; $n_words];
-                let word_shift = shift / 64;
-                let bit_shift = shift % 64;
-                for i in 0..$n_words {
-                    // Shift
-                    if bit_shift < 64 && i + word_shift < $n_words {
-                        ret[i + word_shift] += original[i] << bit_shift;
-                    }
-                    // Carry
-                    if bit_shift > 0 && i + word_shift + 1 < $n_words {
-                        ret[i + word_shift + 1] += original[i] >> (64 - bit_shift);
-                    }
-                }
-                $name(ret)
-            }
-        }
-
-        impl ::std::ops::Shr<usize> for $name {
-            type Output = $name;
-
-            fn shr(self, shift: usize) -> $name {
-                let $name(ref original) = self;
-                let mut ret = [0u64; $n_words];
-                let word_shift = shift / 64;
-                let bit_shift = shift % 64;
-                for i in word_shift..$n_words {
-                    // Shift
-                    ret[i - word_shift] += original[i] >> bit_shift;
-                    // Carry
-                    if bit_shift > 0 && i < $n_words - 1 {
-                        ret[i - word_shift] += original[i + 1] << (64 - bit_shift);
-                    }
-                }
-                $name(ret)
-            }
-        }
-
-        impl fmt::Debug for $name {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                let &$name(ref data) = self;
-                write!(f, "0x")?;
-                for ch in data.iter().rev() {
-                    write!(f, "{:016x}", ch)?;
-                }
-                Ok(())
-            }
-        }
-
-        impl fmt::Display for $name {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                <fmt::Debug>::fmt(self, f)
-            }
-        }
-
-        // impl<S: ::consensus::encode::Encoder> ::consensus::encode::Encodable<S> for $name {
-        //     #[inline]
-        //     fn consensus_encode(&self, s: &mut S) -> Result<(), encode::Error> {
-        //         let &$name(ref data) = self;
-        //         for word in data.iter() { word.consensus_encode(s)?; }
-        //         Ok(())
-        //     }
-        // }
-
-        // impl<D: ::consensus::encode::Decoder> ::consensus::encode::Decodable<D> for $name {
-        //     fn consensus_decode(d: &mut D) -> Result<$name, encode::Error> {
-        //         use consensus::encode::Decodable;
-        //         let ret: [u64; $n_words] = Decodable::consensus_decode(d)?;
-        //         Ok($name(ret))
-        //     }
-        // }
-    };
+    /// Create value representing one
+    fn one() -> Self;
 }
 
-construct_uint!(Uint256, 4);
-construct_uint!(Uint128, 2);
+// use consensus::encode;
+// use util::BitArray;
+//TODO what is repr actually used for?
+//https://doc.rust-lang.org/nomicon/other-reprs.html -> I'm not sure we are going to be transfering
+//this through FFI, so this could probably be removed, but I'll leave this for review.
+#[repr(C)]
+pub struct Uint256(pub [u64; 4]);
+
+//thing = Uint256
+//ty = u64
+//expr = 4
+
+impl<'a> From<&'a [u64]> for Uint256 {
+    fn from(data: &'a [u64]) -> Uint256 {
+        assert_eq!(data.len(), 4);
+        let mut ret = [0; 4];
+        ret.copy_from_slice(&data[..]);
+        Uint256(ret)
+    }
+}
+
+impl ::std::ops::Index<usize> for Uint256 {
+    type Output = u64;
+
+    #[inline]
+    fn index(&self, index: usize) -> &u64 {
+        let &Uint256(ref dat) = self;
+        &dat[index]
+    }
+}
+
+impl ::std::ops::Index<::std::ops::Range<usize>> for Uint256 {
+    type Output = [u64];
+
+    #[inline]
+    fn index(&self, index: ::std::ops::Range<usize>) -> &[u64] {
+        &self.0[index]
+    }
+}
+
+impl ::std::ops::Index<::std::ops::RangeTo<usize>> for Uint256 {
+    type Output = [u64];
+
+    #[inline]
+    fn index(&self, index: ::std::ops::RangeTo<usize>) -> &[u64] {
+        &self.0[index]
+    }
+}
+
+impl ::std::ops::Index<::std::ops::RangeFrom<usize>> for Uint256 {
+    type Output = [u64];
+
+    #[inline]
+    fn index(&self, index: ::std::ops::RangeFrom<usize>) -> &[u64] {
+        &self.0[index]
+    }
+}
+
+impl ::std::ops::Index<::std::ops::RangeFull> for Uint256 {
+    type Output = [u64];
+
+    #[inline]
+    fn index(&self, _: ::std::ops::RangeFull) -> &[u64] {
+        &self.0[..]
+    }
+}
+
+impl PartialEq for Uint256 {
+    #[inline]
+    fn eq(&self, other: &Uint256) -> bool {
+        &self[..] == &other[..]
+    }
+}
+
+impl Eq for Uint256 {}
+
+impl PartialOrd for Uint256 {
+    #[inline]
+    fn partial_cmp(&self, other: &Uint256) -> Option<::std::cmp::Ordering> {
+        Some(self.cmp(&other))
+    }
+}
+
+impl Ord for Uint256 {
+    #[inline]
+    fn cmp(&self, other: &Uint256) -> ::std::cmp::Ordering {
+        // manually implement comparison to get little-endian ordering
+        // (we need this for our numeric types; non-numeric ones shouldn't
+        // be ordered anyway except to put them in BTrees or whatever, and
+        // they don't care how we order as long as we're consistent).
+        for i in 0..4 {
+            if self[4 - 1 - i] < other[4 - 1 - i] {
+                return ::std::cmp::Ordering::Less;
+            }
+            if self[4 - 1 - i] > other[4 - 1 - i] {
+                return ::std::cmp::Ordering::Greater;
+            }
+        }
+        ::std::cmp::Ordering::Equal
+    }
+}
+
+#[cfg_attr(feature = "clippy", allow(expl_impl_clone_on_copy))] // we don't define the `struct`, we have to explicitly impl
+impl Clone for Uint256 {
+    #[inline]
+    fn clone(&self) -> Uint256 {
+        Uint256::from(&self[..])
+    }
+}
+
+impl Copy for Uint256 {}
 
 impl Uint256 {
-    /// Increment by 1
+    #[inline]
+    /// Converts the object to a raw pointer
+    pub fn as_ptr(&self) -> *const u64 {
+        let &Uint256(ref dat) = self;
+        dat.as_ptr()
+    }
+
+    #[inline]
+    /// Converts the object to a mutable raw pointer
+    pub fn as_mut_ptr(&mut self) -> *mut u64 {
+        let &mut Uint256(ref mut dat) = self;
+        dat.as_mut_ptr()
+    }
+
+    #[inline]
+    /// Returns the length of the object as an array
+    pub fn len(&self) -> usize {
+        4
+    }
+
+    #[inline]
+    /// Returns whether the object, as an array, is empty. Always false.
+    pub fn is_empty(&self) -> bool {
+        false
+    }
+
+    #[inline]
+    /// Returns the underlying bytes.
+    pub fn as_bytes(&self) -> &[u64; 4] {
+        &self.0
+    }
+
+    #[inline]
+    /// Returns the underlying bytes.
+    pub fn to_bytes(&self) -> [u64; 4] {
+        self.0.clone()
+    }
+
+    #[inline]
+    /// Returns the underlying bytes.
+    pub fn into_bytes(self) -> [u64; 4] {
+        self.0
+    }
+    /// Conversion to u32
+    #[inline]
+    pub fn low_u32(&self) -> u32 {
+        let &Uint256(ref arr) = self;
+        arr[0] as u32
+    }
+
+    /// Conversion to u64
+    #[inline]
+    pub fn low_u64(&self) -> u64 {
+        let &Uint256(ref arr) = self;
+        arr[0] as u64
+    }
+
+    /// Return the least number of bits needed to represent the number
+    #[inline]
+    pub fn bits(&self) -> usize {
+        let &Uint256(ref arr) = self;
+        for i in 1..4 {
+            if arr[4 - i] > 0 {
+                return (0x40 * (4 - i + 1)) - arr[4 - i].leading_zeros() as usize;
+            }
+        }
+        0x40 - arr[0].leading_zeros() as usize
+    }
+
+    /// Multiplication by u32
+    pub fn mul_u32(self, other: u32) -> Uint256 {
+        let Uint256(ref arr) = self;
+        let mut carry = [0u64; 4];
+        let mut ret = [0u64; 4];
+        for i in 0..4 {
+            let not_last_word = i < 4 - 1;
+            let upper = other as u64 * (arr[i] >> 32);
+            let lower = other as u64 * (arr[i] & 0xFFFFFFFF);
+            if not_last_word {
+                carry[i + 1] += upper >> 32;
+            }
+            let (sum, overflow) = lower.overflowing_add(upper << 32);
+            ret[i] = sum;
+            if overflow && not_last_word {
+                carry[i + 1] += 1;
+            }
+        }
+        Uint256(ret) + Uint256(carry)
+    }
+
+    /// Create an object from a given unsigned 64-bit integer
+    pub fn from_u64(init: u64) -> Option<Uint256> {
+        let mut ret = [0; 4];
+        ret[0] = init;
+        Some(Uint256(ret))
+    }
+
+    /// Create an object from a given signed 64-bit integer
+    pub fn from_i64(init: i64) -> Option<Uint256> {
+        assert!(init >= 0);
+        Uint256::from_u64(init as u64)
+    }
+
     #[inline]
     pub fn increment(&mut self) {
         let &mut Uint256(ref mut arr) = self;
@@ -390,12 +275,268 @@ impl Uint256 {
             }
         }
     }
+}
 
-    /// Decay to a uint128
+impl ::std::ops::Add<Uint256> for Uint256 {
+    type Output = Uint256;
+
+    fn add(self, other: Uint256) -> Uint256 {
+        let Uint256(ref me) = self;
+        let Uint256(ref you) = other;
+        let mut ret = [0u64; 4];
+        let mut carry = [0u64; 4];
+        let mut b_carry = false;
+        for i in 0..4 {
+            ret[i] = me[i].wrapping_add(you[i]);
+            if i < 4 - 1 && ret[i] < me[i] {
+                carry[i + 1] = 1;
+                b_carry = true;
+            }
+        }
+        if b_carry {
+            Uint256(ret) + Uint256(carry)
+        } else {
+            Uint256(ret)
+        }
+    }
+}
+
+impl ::std::ops::Sub<Uint256> for Uint256 {
+    type Output = Uint256;
+
     #[inline]
-    pub fn low_128(&self) -> Uint128 {
-        let &Uint256(data) = self;
-        Uint128([data[0], data[1]])
+    fn sub(self, other: Uint256) -> Uint256 {
+        //TODO should this be Uint256::one()?
+        self + !other + BitArray::one()
+    }
+}
+
+impl ::std::ops::Mul<Uint256> for Uint256 {
+    type Output = Uint256;
+
+    fn mul(self, other: Uint256) -> Uint256 {
+        let mut me = Uint256::zero();
+        // TODO: be more efficient about this
+        for i in 0..(2 * 4) {
+            let to_mul = (other >> (32 * i)).low_u32();
+            me = me + (self.mul_u32(to_mul) << (32 * i));
+        }
+        me
+    }
+}
+
+impl ::std::ops::Div<Uint256> for Uint256 {
+    type Output = Uint256;
+
+    fn div(self, other: Uint256) -> Uint256 {
+        let mut sub_copy = self;
+        let mut shift_copy = other;
+        let mut ret = [0u64; 4];
+
+        let my_bits = self.bits();
+        let your_bits = other.bits();
+
+        // Check for division by 0
+        assert!(your_bits != 0);
+
+        // Early return in case we are dividing by a larger number than us
+        if my_bits < your_bits {
+            return Uint256(ret);
+        }
+
+        // Bitwise long division
+        let mut shift = my_bits - your_bits;
+        shift_copy = shift_copy << shift;
+        loop {
+            if sub_copy >= shift_copy {
+                ret[shift / 64] |= 1 << (shift % 64);
+                sub_copy = sub_copy - shift_copy;
+            }
+            shift_copy = shift_copy >> 1;
+            if shift == 0 {
+                break;
+            }
+            shift -= 1;
+        }
+
+        Uint256(ret)
+    }
+}
+
+/// Little-endian large integer type
+// impl_array_newtype!($name, u64, $n_words);
+
+impl BitArray for Uint256 {
+    #[inline]
+    fn bit(&self, index: usize) -> bool {
+        let &Uint256(ref arr) = self;
+        arr[index / 64] & (1 << (index % 64)) != 0
+    }
+
+    #[inline]
+    fn bit_slice(&self, start: usize, end: usize) -> Uint256 {
+        (*self >> start).mask(end - start)
+    }
+
+    #[inline]
+    fn mask(&self, n: usize) -> Uint256 {
+        let &Uint256(ref arr) = self;
+        let mut ret = [0; 4];
+        for i in 0..4 {
+            if n >= 0x40 * (i + 1) {
+                ret[i] = arr[i];
+            } else {
+                ret[i] = arr[i] & ((1 << (n - 0x40 * i)) - 1);
+                break;
+            }
+        }
+        Uint256(ret)
+    }
+
+    #[inline]
+    fn trailing_zeros(&self) -> usize {
+        let &Uint256(ref arr) = self;
+        for i in 0..(4 - 1) {
+            if arr[i] > 0 {
+                return (0x40 * i) + arr[i].trailing_zeros() as usize;
+            }
+        }
+        (0x40 * (4 - 1)) + arr[4 - 1].trailing_zeros() as usize
+    }
+
+    fn zero() -> Uint256 {
+        Uint256([0; 4])
+    }
+    fn one() -> Uint256 {
+        Uint256({
+            let mut ret = [0; 4];
+            ret[0] = 1;
+            ret
+        })
+    }
+}
+
+impl ::std::default::Default for Uint256 {
+    fn default() -> Uint256 {
+        BitArray::zero()
+    }
+}
+
+impl ::std::ops::BitAnd<Uint256> for Uint256 {
+    type Output = Uint256;
+
+    #[inline]
+    fn bitand(self, other: Uint256) -> Uint256 {
+        let Uint256(ref arr1) = self;
+        let Uint256(ref arr2) = other;
+        let mut ret = [0u64; 4];
+        for i in 0..4 {
+            ret[i] = arr1[i] & arr2[i];
+        }
+        Uint256(ret)
+    }
+}
+
+impl ::std::ops::BitXor<Uint256> for Uint256 {
+    type Output = Uint256;
+
+    #[inline]
+    fn bitxor(self, other: Uint256) -> Uint256 {
+        let Uint256(ref arr1) = self;
+        let Uint256(ref arr2) = other;
+        let mut ret = [0u64; 4];
+        for i in 0..4 {
+            ret[i] = arr1[i] ^ arr2[i];
+        }
+        Uint256(ret)
+    }
+}
+
+impl ::std::ops::BitOr<Uint256> for Uint256 {
+    type Output = Uint256;
+
+    #[inline]
+    fn bitor(self, other: Uint256) -> Uint256 {
+        let Uint256(ref arr1) = self;
+        let Uint256(ref arr2) = other;
+        let mut ret = [0u64; 4];
+        for i in 0..4 {
+            ret[i] = arr1[i] | arr2[i];
+        }
+        Uint256(ret)
+    }
+}
+
+impl ::std::ops::Not for Uint256 {
+    type Output = Uint256;
+
+    #[inline]
+    fn not(self) -> Uint256 {
+        let Uint256(ref arr) = self;
+        let mut ret = [0u64; 4];
+        for i in 0..4 {
+            ret[i] = !arr[i];
+        }
+        Uint256(ret)
+    }
+}
+
+impl ::std::ops::Shl<usize> for Uint256 {
+    type Output = Uint256;
+
+    fn shl(self, shift: usize) -> Uint256 {
+        let Uint256(ref original) = self;
+        let mut ret = [0u64; 4];
+        let word_shift = shift / 64;
+        let bit_shift = shift % 64;
+        for i in 0..4 {
+            // Shift
+            if bit_shift < 64 && i + word_shift < 4 {
+                ret[i + word_shift] += original[i] << bit_shift;
+            }
+            // Carry
+            if bit_shift > 0 && i + word_shift + 1 < 4 {
+                ret[i + word_shift + 1] += original[i] >> (64 - bit_shift);
+            }
+        }
+        Uint256(ret)
+    }
+}
+
+impl ::std::ops::Shr<usize> for Uint256 {
+    type Output = Uint256;
+
+    fn shr(self, shift: usize) -> Uint256 {
+        let Uint256(ref original) = self;
+        let mut ret = [0u64; 4];
+        let word_shift = shift / 64;
+        let bit_shift = shift % 64;
+        for i in word_shift..4 {
+            // Shift
+            ret[i - word_shift] += original[i] >> bit_shift;
+            // Carry
+            if bit_shift > 0 && i < 4 - 1 {
+                ret[i - word_shift] += original[i + 1] << (64 - bit_shift);
+            }
+        }
+        Uint256(ret)
+    }
+}
+
+impl fmt::Debug for Uint256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let &Uint256(ref data) = self;
+        write!(f, "0x")?;
+        for ch in data.iter().rev() {
+            write!(f, "{:016x}", ch)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for Uint256 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        <fmt::Debug>::fmt(self, f)
     }
 }
 
@@ -620,18 +761,5 @@ mod tests {
             add << 64,
             Uint256([0, 0xDEADBEEFDEADBEEF, 0xDEADBEEFDEADBEEF, 0])
         );
-    }
-
-    #[test]
-    pub fn uint256_serialize_test() {
-        let start1 = Uint256([0x8C8C3EE70C644118u64, 0x0209E7378231E632, 0, 0]);
-        let start2 = Uint256([0x8C8C3EE70C644118u64, 0x0209E7378231E632, 0xABCD, 0xFFFF]);
-        let serial1 = serialize(&start1);
-        let serial2 = serialize(&start2);
-        let end1: Result<Uint256, _> = deserialize(&serial1);
-        let end2: Result<Uint256, _> = deserialize(&serial2);
-
-        assert_eq!(end1.ok(), Some(start1));
-        assert_eq!(end2.ok(), Some(start2));
     }
 }
