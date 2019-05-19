@@ -13,13 +13,12 @@
 // hsd.define('Output', './primitives/output');
 // hsd.define('TX', './primitives/tx');
 //
-pub mod miner;
+pub mod mining;
 pub mod primitives;
+pub mod types;
 
 //PRIMITVES
 // pub use primitives::block::Block;
 pub use primitives::address::Address;
-pub use primitives::buffer::Buffer;
 pub use primitives::covenant::Covenant;
-pub use primitives::hash::Hash;
 pub use primitives::transaction::Transaction;
