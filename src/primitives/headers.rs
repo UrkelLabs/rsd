@@ -3,9 +3,7 @@
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
 
-use crate::primitives::buffer::Buffer;
-use crate::primitives::hash::Hash;
-use std::str;
+use crate::types::{Buffer, Hash, Uint256};
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
@@ -34,7 +32,8 @@ pub struct BlockHeader {
     pub bits: u32,
     /// The nonce, selected to obtain a low enough blockhash
     //Change this to Buffer, or Bytes some kind of raw type. - let's see what the output of our kmac function is.
-    pub nonce: Hash,
+    //256 uint
+    pub nonce: Uint256,
 }
 
 impl BlockHeader {
@@ -72,7 +71,7 @@ impl BlockHeader {
         // buffer.write_u64(self.nonce as u64);
         //Think we might want to change this to write Bytes or write Buffer.
         //Because nonce is not *technically* a hash
-        buffer.write_hash(self.nonce);
+        buffer.write_u256(self.nonce);
 
         buffer.to_hex()
     }
@@ -137,7 +136,7 @@ mod tests {
 
             time: 1554268735,
             bits: 486604799,
-            nonce: Hash::from("0000000000000000000000000000000000000000000000000000000000000000"),
+            nonce: Uint256::default(),
         };
 
         let hex = block_header.as_hex();

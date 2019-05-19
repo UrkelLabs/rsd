@@ -1,3 +1,5 @@
+use crate::types::Hash;
+
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct Transaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
@@ -7,4 +9,12 @@ pub struct Transaction {
     /// valid immediately.
     pub lock_time: u32,
     //TODO inputs and outputs.
+}
+
+impl Transaction {
+    //TODO implement - see hsd primitives
+    //we should keep similar behavior with hash and witness hash
+    pub fn hash(&self) -> Hash {
+        Default::default()
+    }
 }

@@ -1,5 +1,5 @@
 use crate::Address;
-use blake2::{Blake2b, Digest};
+use blake2::Blake2b;
 
 /// A Handshake covenant, which is a method of changing name state on the chain.
 #[derive(PartialEq, Eq, Clone, Debug)]
