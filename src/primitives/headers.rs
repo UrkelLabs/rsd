@@ -2,7 +2,9 @@
 
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
+use sp800_185::KMac;
 
+use crate::protocol::consensus::consensus_verify_pow;
 use crate::types::{Buffer, Hash, Uint256};
 
 /// A block header, which contains all the block's information except
@@ -39,23 +41,64 @@ pub struct BlockHeader {
 impl BlockHeader {
     pub fn hash(&self) -> Hash {
         let mut hasher = Blake2b::new(32);
+        //I think can just pass without decoding... TODO
         hasher.input(&hex::decode(self.as_hex()).unwrap());
         // let hash = hasher.finalize();
         let mut out = [0; 32];
 
         hasher.result(&mut out);
-        // let hash = Hash::from(out);
-        // let hex = hex::decode(res).unwrap();
-        // dbg!(str::from_utf8(&res).unwrap());
-        // Hash::from()
-        // Default::default()
-        // let strs: Vec<String> = res.iter().map(|b| format!("{:02X}", b)).collect();
-        // strs.connect(" ");
 
         Hash::from(hex::encode(out))
     }
 
+    //Writes everything but the nonce to a buffer.
+    pub fn to_prehead(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_u32(self.version);
+        buffer.write_hash(self.prev_blockhash);
+        buffer.write_hash(self.merkle_root);
+        buffer.write_hash(self.witness_root);
+        buffer.write_hash(self.tree_root);
+        buffer.write_hash(self.filter_root);
+        buffer.write_hash(self.reserved_root);
+        buffer.write_u64(self.time);
+        buffer.write_u32(self.bits);
+
+        buffer
+    }
+
+    //Wrapper function for all the verification on the headers
+    pub fn verify(&self) -> bool {
+        //As of right now headers can just check pow, so we'll simply return that in place of this
+        //function.
+        self.verify_pow()
+    }
+
+    pub fn verify_pow(&self) -> bool {
+        let data = self.to_prehead();
+
+        let mut key = [0; 32];
+
+        let mut kmac = KMac::new_kmac256(&self.nonce.to_le_bytes(), &[]);
+        kmac.update(&data);
+        kmac.finalize(&mut key);
+
+        let mut hasher = Blake2b::new_keyed(32, &key);
+        hasher.input(&data);
+
+        let mut hash = [0; 32];
+
+        hasher.result(&mut hash);
+
+        dbg!(&hash);
+
+        //Pass to consensus code.
+        consensus_verify_pow(&Hash::from(hash), self.bits)
+    }
+
     pub fn as_hex(&self) -> String {
+        //Use prehead here.
         let mut buffer = Buffer::new();
 
         buffer.write_u32(self.version);
@@ -108,6 +151,27 @@ mod tests {
         let hex = block_header.as_hex();
 
         dbg!(hex);
+    }
+
+    #[test]
+    fn test_check_header_pow() {
+        //We will need to pass a legit block for this test TODO
+        let block_header = BlockHeader {
+            version: 1,
+            prev_blockhash: Default::default(),
+            merkle_root: Default::default(),
+            witness_root: Default::default(),
+            tree_root: Default::default(),
+            filter_root: Default::default(),
+            reserved_root: Default::default(),
+            time: 2,
+            bits: 486604799,
+            nonce: Default::default(),
+        };
+
+        let pow = block_header.verify_pow();
+
+        assert!(pow);
     }
 
     #[test]
