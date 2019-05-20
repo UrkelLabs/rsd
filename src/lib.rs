@@ -15,6 +15,7 @@
 //
 pub mod mining;
 pub mod primitives;
+pub mod protocol;
 pub mod types;
 
 //PRIMITVES
