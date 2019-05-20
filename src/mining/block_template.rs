@@ -1,4 +1,5 @@
-use crate::{Hash, Transaction};
+use crate::types::Hash;
+use crate::Transaction;
 // this.prevBlock = consensus.ZERO_HASH;
 //     this.version = 1;
 //     this.height = 0;

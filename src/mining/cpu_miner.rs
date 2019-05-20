@@ -1,5 +1,6 @@
-use crate::miner::block_template::BlockTemplate;
-use crate::{Buffer, Hash, Transaction};
+use crate::mining::block_template::BlockTemplate;
+use crate::types::{Buffer, Hash, Uint256};
+use crate::Transaction;
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
 
@@ -19,7 +20,7 @@ impl BlockHeaderBytes {
         let reserved_root_hash = Hash::default();
 
         let time = 0u64;
-        let nonce = Hash::default();
+        let nonce = Uint256::default();
 
         //TODO just make this a block, and then have a helper function called to_buffer()
         let mut buffer = Buffer::new();
@@ -31,8 +32,7 @@ impl BlockHeaderBytes {
         buffer.write_hash(reserved_root_hash);
         buffer.write_u64(time);
         buffer.write_u32(bits);
-        //Nonce is a u256... Need to switch this.
-        buffer.write_hash(nonce);
+        buffer.write_u256(nonce);
 
         BlockHeaderBytes { data: buffer }
     }
@@ -53,13 +53,24 @@ impl BlockHeaderBytes {
     }
 
     /// Set block header nonce
-    fn set_nonce(&mut self, nonce: &Hash) {
+    fn set_nonce(&mut self, nonce: &Uint256) {
         let mut nonce_bytes: &mut [u8] = &mut self.data[4 + 32 + 32 + 32 + 32 + 32 + 8 + 4..];
-        nonce_bytes.copy_from_slice(&nonce.to_array());
+        nonce_bytes.copy_from_slice(&nonce.to_le_bytes());
     }
 
     /// Returns block header hash
     fn hash(&self) -> Hash {
+        //https://github.com/handshake-org/hsd/blob/master/lib/mining/mine.js#L28-L29
+        //TODO this needs to go into the consensus file
+        const NONCE_POSITION: usize = 208;
+        let data = &self.data[0..NONCE_POSITION];
+        let nonce = &self.data[NONCE_POSITION..self.data.len()];
+
+        // let mut buf = vec![0; ];
+        // let mut kmac = KMac::new_kmac128(nonce, []);
+        // kmac.update(data);
+        // kmac.finalize(&mut buf);
+
         let mut hasher = Blake2b::new(32);
         hasher.input(&hex::decode(self.data).unwrap());
         let mut out = [0; 32];
@@ -77,18 +88,18 @@ pub trait CoinbaseTransactionBuilder {
     /// Returns transaction hash
     fn hash(&self) -> Hash;
     // /// Coverts transaction into raw bytes
-    // fn finish(self) -> Transaction;
+    fn finish(self) -> Transaction;
 }
 
 /// Cpu miner solution.
 pub struct Solution {
     /// Block header nonce.
-    pub nonce: u32,
+    pub nonce: Uint256,
     /// Coinbase transaction extra nonce (modyfiable by miner).
     // pub extranonce: U256,
-    pub extranonce: u32,
+    pub extranonce: Uint256,
     /// Block header time.
-    pub time: u32,
+    pub time: u64,
     // /// Coinbase transaction (extranonce is already set).
     pub coinbase_transaction: Transaction,
 }
@@ -102,15 +113,17 @@ pub struct Solution {
 /// It's possible to also experiment with time, but I find it pointless
 /// to implement on CPU.
 /// TODO extranonce == u32??
+/// extranonce maybe should be a Uint256? TODO XXX TODO Update extranonce should definitely be
+/// u32.... But we can switch that later.
 pub fn find_solution<T>(
     block: &BlockTemplate,
     mut coinbase_transaction_builder: T,
-    max_extranonce: u32,
+    max_extranonce: Uint256,
 ) -> Option<Solution>
 where
     T: CoinbaseTransactionBuilder,
 {
-    let mut extranonce: u32 = 0;
+    let mut extranonce = Uint256::default();
     let mut extranonce_bytes = [0u8; 32];
 
     let mut header_bytes = BlockHeaderBytes::new(
@@ -137,23 +150,32 @@ where
         // update header with new merkle root hash
         header_bytes.set_merkle_root_hash(&merkle_root_hash);
 
-        for nonce in 0..(u32::max_value() as u64 + 1) {
-            // update §
-            header_bytes.set_nonce(nonce as u32);
+        let nonce = Uint256::default();
+
+        loop {
+            // Check if this should be reference or not.
+            header_bytes.set_nonce(&nonce);
             let hash = header_bytes.hash();
             if is_valid_proof_of_work_hash(block.bits, &hash) {
                 let solution = Solution {
-                    nonce: nonce as u32,
-                    extranonce: extranonce,
+                    nonce,
+                    extranonce,
                     time: block.time,
                     coinbase_transaction: coinbase_transaction_builder.finish(),
                 };
 
                 return Some(solution);
             }
+
+            //Maybe rework this, seems like a lot of checking
+            if nonce == Uint256::max_value() {
+                break;
+            } else {
+                nonce.increment();
+            }
         }
 
-        extranonce = extranonce + 1.into();
+        extranonce.increment();
     }
 
     None
@@ -161,14 +183,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use super::{find_solution, CoinbaseTransactionBuilder};
-    use block_assembler::BlockTemplate;
-    use chain::{Transaction, TransactionInput, TransactionOutput};
-    use keys::AddressHash;
-    use primitives::bigint::{Uint, U256};
-    use primitives::bytes::Bytes;
-    use primitives::hash::H256;
-    use script::Builder;
 
     pub struct P2shCoinbaseTransactionBuilder {
         transaction: Transaction,
@@ -199,7 +215,7 @@ mod tests {
             self.transaction.inputs[0].script_sig = extranonce.to_vec().into();
         }
 
-        fn hash(&self) -> H256 {
+        fn hash(&self) -> Hash {
             self.transaction.hash()
         }
 
