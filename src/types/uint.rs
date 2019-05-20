@@ -191,9 +191,34 @@ impl Uint256 {
     }
 
     #[inline]
+    //Remove old Bytes functions TODO move them to returning u8
+    //XXX Giant todo, do not forget these, or we will have unstandarized function returns.
     /// Returns the underlying bytes.
     pub fn to_bytes(&self) -> [u64; 4] {
         self.0.clone()
+    }
+
+    #[inline]
+    //Returns little endian bytes
+    pub fn to_le_bytes(&self) -> [u8; 32] {
+        let mut bytes = [0; 32];
+        for i in 0..4 {
+            //Ugly rewrite this code to be more efficient...
+            let le_bytes = self.0[i].to_le_bytes();
+
+            bytes[8 * i] = le_bytes[0];
+            bytes[1 + 8 * i] = le_bytes[1];
+            bytes[2 + 8 * i] = le_bytes[2];
+            bytes[3 + 8 * i] = le_bytes[3];
+
+            //Second half
+            bytes[4 + 8 * i] = le_bytes[4];
+            bytes[5 + 8 * i] = le_bytes[5];
+            bytes[6 + 8 * i] = le_bytes[6];
+            bytes[7 + 8 * i] = le_bytes[7];
+        }
+
+        bytes
     }
 
     #[inline]
@@ -201,6 +226,7 @@ impl Uint256 {
     pub fn into_bytes(self) -> [u64; 4] {
         self.0
     }
+
     /// Conversion to u32
     #[inline]
     pub fn low_u32(&self) -> u32 {
