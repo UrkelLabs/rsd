@@ -42,3 +42,11 @@ impl From<Vec<u8>> for Hash {
         Hash(array)
     }
 }
+
+//This should only be implemented on Blake2b hash
+//Redo this when we split to blake2b/ run into problems TODO
+impl From<[u8; 32]> for Hash {
+    fn from(bytes: [u8; 32]) -> Self {
+        Hash(bytes)
+    }
+}
