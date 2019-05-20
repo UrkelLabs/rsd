@@ -24,6 +24,11 @@
 
 use std::fmt;
 
+// When Std::iter::Step is finished being implemented add it to this type. That would allow us to
+// use for loops much more easily. Right now it's on nightly only -> https://github.com/rust-lang/rust/issues/42168
+//TODO expose a zero() function on Uint256 -> Right now the only way to get a 0 is to use default()
+//which doesn't feel very natural to how other rust is written.
+//
 /// A trait which allows numbers to act as fixed-size bit arrays
 pub trait BitArray {
     /// Is bit set?
@@ -57,11 +62,20 @@ pub struct Uint256(pub [u64; 4]);
 //ty = u64
 //expr = 4
 
+//DO we need these lifetimes here? TODO
 impl<'a> From<&'a [u64]> for Uint256 {
     fn from(data: &'a [u64]) -> Uint256 {
         assert_eq!(data.len(), 4);
         let mut ret = [0; 4];
         ret.copy_from_slice(&data[..]);
+        Uint256(ret)
+    }
+}
+
+impl From<u32> for Uint256 {
+    fn from(value: u32) -> Uint256 {
+        let mut ret = [0; 4];
+        ret[0] = value as u64;
         Uint256(ret)
     }
 }
@@ -221,6 +235,16 @@ impl Uint256 {
         bytes
     }
 
+    /// The maximum value which can be inhabited by this type.
+    #[inline]
+    pub fn max_value() -> Self {
+        let mut result = [0; 4];
+        for i in 0..4 {
+            result[i] = u64::max_value();
+        }
+        Uint256(result)
+    }
+
     #[inline]
     /// Returns the underlying bytes.
     pub fn into_bytes(self) -> [u64; 4] {
@@ -285,6 +309,25 @@ impl Uint256 {
     pub fn from_i64(init: i64) -> Option<Uint256> {
         assert!(init >= 0);
         Uint256::from_u64(init as u64)
+    }
+
+    /// Converts from big endian representation bytes in memory.
+    pub fn from_big_endian(slice: &[u8]) -> Self {
+        assert!(4 * 8 >= slice.len());
+        assert!(slice.len() % 8 == 0);
+        //TODO this may need to be reworked for various size arrays, test this.
+        let mut ret = [0; 4];
+        let length = slice.len() / 8;
+        //TODO this might have to be reversed
+        for i in 0..length {
+            let start = 0 + i * 8;
+            let end = 8 + i * 8;
+            let mut bytes = [0; 8];
+            bytes.copy_from_slice(&slice[start..end]);
+            ret[i] = u64::from_be_bytes(bytes);
+        }
+
+        Uint256(ret)
     }
 
     #[inline]
@@ -433,6 +476,7 @@ impl BitArray for Uint256 {
     fn zero() -> Uint256 {
         Uint256([0; 4])
     }
+
     fn one() -> Uint256 {
         Uint256({
             let mut ret = [0; 4];
