@@ -9,5 +9,6 @@ edition = "2018"
 blake2 = "0.8.0"
 cryptoxide = "0.1.1"
 hex = "0.3.2"
+sp800-185 = "0.2.0"
 
 
