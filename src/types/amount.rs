@@ -392,3 +392,29 @@ impl Amount {
     //     }
     // }
 }
+
+
+#[cfg(test)]
+mod tests{
+    // Import everything used above
+    use super::*;
+
+    #[test]
+    fn test_denomination_from_string() {
+        let denom = Denomination::from_str("HNS").unwrap();
+        assert_eq!(denom, Denomination::Handshake);
+        let denom = Denomination::from_str("dollarydoo").unwrap();
+        assert_eq!(denom, Denomination::DollaryDoo);
+    }
+}
+
+
+// impl Denomination {
+//     /// The number of decimal places more than a dollarydoo.
+//     fn precision(self) -> u32 {
+//         match self {
+//             Denomination::DollaryDoo => 0,
+//             Denomination::Handshake => 6,
+//         }
+//     }
+// }
