@@ -1,5 +1,6 @@
 use crate::Outpoint;
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Input {
     pub prevout: Outpoint,
     pub sequence: u32,

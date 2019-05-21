@@ -1,5 +1,6 @@
 use crate::{Address, Amount, Covenant};
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Output {
     value: Amount,
     address: Address,
