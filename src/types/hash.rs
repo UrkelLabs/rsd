@@ -55,5 +55,5 @@ impl From<[u8; 32]> for Hash {
 }
 
 //Custom type specificly for Name Hashes.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct NameHash(Hash);
