@@ -23,3 +23,6 @@ pub mod types;
 pub use primitives::address::Address;
 pub use primitives::covenant::Covenant;
 pub use primitives::transaction::Transaction;
+
+//Types
+pub use types::{Buffer, Hash, Name, NameHash, Uint256};
