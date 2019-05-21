@@ -15,6 +15,7 @@ use crate::protocol::consensus::max_coin;
 use std::error;
 use std::fmt;
 use std::str::FromStr;
+use std::fmt::Write;
 
 /// A set of denominations in which an Amount can be expressed.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -138,7 +139,7 @@ impl Amount {
 
     /// Convert from a value expressing bitcoins to an [Amount].
     pub fn from_hns(hns: f64) -> Result<Amount, ParseAmountError> {
-        Amount::from_float_in(btc, Denomination::Bitcoin)
+        Amount::from_float_in(hns, Denomination::Handshake)
     }
 
     /// Parse a decimal string as a value in the given denomination.
@@ -153,24 +154,24 @@ impl Amount {
             return Err(ParseAmountError::InputTooLarge);
         }
 
-        let negative = s.chars().next().unwrap() == '-';
-        if negative {
-            if s.len() == 1 {
-                return Err(ParseAmountError::InvalidFormat);
-            }
-            s = &s[1..];
-        }
+        // let negative = s.chars().next().unwrap() == '-';
+        // if negative {
+        //     if s.len() == 1 {
+        //         return Err(ParseAmountError::InvalidFormat);
+        //     }
+        //     s = &s[1..];
+        // }
 
         let max_decimals = {
             // The difference in precision between native (satoshi)
             // and desired denomination.
-            let precision_diff = -denom.precision();
-            if precision_diff < 0 {
+            let precision_diff = denom.precision();
+            if precision_diff > 0 {
                 // If precision diff is negative, this means we are parsing
                 // into a less precise amount. That is not allowed unless
                 // there are no decimals and the last digits are zeroes as
                 // many as the diffence in precision.
-                let last_n = precision_diff.abs() as usize;
+                let last_n = precision_diff as usize;
                 if s.contains(".") || s.chars().rev().take(last_n).any(|d| d != '0') {
                     return Err(ParseAmountError::TooPrecise);
                 }
@@ -182,14 +183,14 @@ impl Amount {
         };
 
         let mut decimals = None;
-        let mut value: i64 = 0; // as satoshis
+        let mut value: u64 = 0; // as satoshis
         for c in s.chars() {
             match c {
                 '0'...'9' => {
                     // Do `value = 10 * value + digit`, catching overflows.
-                    match 10_i64.checked_mul(value) {
+                    match 10_u64.checked_mul(value) {
                         None => return Err(ParseAmountError::TooBig),
-                        Some(val) => match val.checked_add((c as u8 - b'0') as i64) {
+                        Some(val) => match val.checked_add((c as u8 - b'0') as u64) {
                             None => return Err(ParseAmountError::TooBig),
                             Some(val) => value = val,
                         },
@@ -213,16 +214,16 @@ impl Amount {
         // Decimally shift left by `max_decimals - decimals`.
         let scale_factor = max_decimals - decimals.unwrap_or(0);
         for _ in 0..scale_factor {
-            value = match 10_i64.checked_mul(value) {
+            value = match 10_u64.checked_mul(value) {
                 Some(v) => v,
                 None => return Err(ParseAmountError::TooBig),
             };
         }
 
-        if negative {
-            value *= -1;
-        }
-        Ok(Amount::from_sat(value))
+        // if negative {
+        //     value *= -1;
+        // }
+        Ok(Amount::from_doo(value))
     }
 
     /// Parses amounts with denomination suffix like they are produced with
@@ -244,7 +245,7 @@ impl Amount {
     ///
     /// Please be aware of the risk of using floating-point numbers.
     pub fn to_float_in(&self, denom: Denomination) -> f64 {
-        (self.as_sat() as f64) * 10_f64.powi(denom.precision())
+        (self.as_doo() as f64) * 10_f64.powi(denom.precision() as i32)
     }
 
     /// Express this [Amount] as a floating-point value in Bitcoin.
@@ -253,7 +254,7 @@ impl Amount {
     ///
     /// Please be aware of the risk of using floating-point numbers.
     pub fn as_btc(&self) -> f64 {
-        self.to_float_in(Denomination::Bitcoin)
+        self.to_float_in(Denomination::Handshake)
     }
 
     /// Convert this [Amount] in floating-point notation with a given
@@ -274,16 +275,17 @@ impl Amount {
         if denom.precision() > 0 {
             // add zeroes in the end
             let width = denom.precision() as usize;
-            write!(f, "{}{:0width$}", self.as_sat(), 0, width = width)?;
+            write!(f, "{}{:0width$}", self.as_doo(), 0, width = width)?;
         } else if denom.precision() < 0 {
             // need to inject a comma in the number
 
-            let sign = match self.is_negative() {
-                true => "-",
-                false => "",
-            };
-            let nb_decimals = denom.precision().abs() as usize;
-            let real = format!("{:0width$}", self.as_sat().abs(), width = nb_decimals);
+            // let sign = match self.is_negative() {
+            //     true => "-",
+            //     false => "",
+            // };
+            let sign = "";
+            let nb_decimals = denom.precision() as usize;
+            let real = format!("{:0width$}", self.as_doo(), width = nb_decimals);
             if real.len() == nb_decimals {
                 write!(f, "{}0.{}", sign, &real[real.len() - nb_decimals..])?;
             } else {
@@ -297,7 +299,7 @@ impl Amount {
             }
         } else {
             // denom.precision() == 0
-            write!(f, "{}", self.as_sat())?;
+            write!(f, "{}", self.as_doo())?;
         }
         Ok(())
     }
@@ -324,69 +326,69 @@ impl Amount {
 
     /// Get the absolute value of this [Amount].
     pub fn abs(self) -> Amount {
-        Amount::from_inner(self.0.abs())
+        Amount(self.0)
     }
 
-    /// Returns a number representing sign of this [Amount].
-    ///
-    /// - `0` if the Amount is zero
-    /// - `1` if the Amount is positive
-    /// - `-1` if the Amount is negative
-    pub fn signum(self) -> i64 {
-        self.0.signum()
-    }
+    // /// Returns a number representing sign of this [Amount].
+    // ///
+    // /// - `0` if the Amount is zero
+    // /// - `1` if the Amount is positive
+    // /// - `-1` if the Amount is negative
+    // pub fn signum(self) -> i64 {
+    //     self.0.signum()
+    // }
 
-    /// Returns `true` if this [Amount] is positive and `false` if
-    /// this [Amount] is zero or negative.
-    pub fn is_positive(self) -> bool {
-        self.0.is_positive()
-    }
+    // /// Returns `true` if this [Amount] is positive and `false` if
+    // /// this [Amount] is zero or negative.
+    // pub fn is_positive(self) -> bool {
+    //     self.0.is_positive()
+    // }
 
-    /// Returns `true` if this [Amount] is negative and `false` if
-    /// this [Amount] is zero or positive.
-    pub fn is_negative(self) -> bool {
-        self.0.is_negative()
-    }
+    // /// Returns `true` if this [Amount] is negative and `false` if
+    // /// this [Amount] is zero or positive.
+    // pub fn is_negative(self) -> bool {
+    //     self.0.is_negative()
+    // }
 
     /// Checked addition.
     /// Returns [None] if overflow occurred.
     pub fn checked_add(self, rhs: Amount) -> Option<Amount> {
-        self.0.checked_add(rhs.0).map(Amount::from_inner)
+        self.0.checked_add(rhs.0).map(Amount)
     }
 
     /// Checked subtraction.
     /// Returns [None] if overflow occurred.
     pub fn checked_sub(self, rhs: Amount) -> Option<Amount> {
-        self.0.checked_sub(rhs.0).map(Amount::from_inner)
+        self.0.checked_sub(rhs.0).map(Amount)
     }
 
     /// Checked multiplication.
     /// Returns [None] if overflow occurred.
-    pub fn checked_mul(self, rhs: i64) -> Option<Amount> {
-        self.0.checked_mul(rhs).map(Amount::from_inner)
+    pub fn checked_mul(self, rhs: u64) -> Option<Amount> {
+        self.0.checked_mul(rhs).map(Amount)
     }
 
     /// Checked integer division.
     /// Be aware that integer division loses the remainder if no exact division
     /// can be made.
     /// Returns [None] if overflow occurred.
-    pub fn checked_div(self, rhs: i64) -> Option<Amount> {
-        self.0.checked_div(rhs).map(Amount::from_inner)
+    pub fn checked_div(self, rhs: u64) -> Option<Amount> {
+        self.0.checked_div(rhs).map(Amount)
     }
 
     /// Checked remainder.
     /// Returns [None] if overflow occurred.
-    pub fn checked_rem(self, rhs: i64) -> Option<Amount> {
-        self.0.checked_rem(rhs).map(Amount::from_inner)
+    pub fn checked_rem(self, rhs: u64) -> Option<Amount> {
+        self.0.checked_rem(rhs).map(Amount)
     }
 
-    /// Subtraction that doesn't allow negative [Amount]s.
-    /// Returns [None] if either [self], [rhs] or the result is strictly negative.
-    pub fn positive_sub(self, rhs: Amount) -> Option<Amount> {
-        if self.is_negative() || rhs.is_negative() || rhs > self {
-            None
-        } else {
-            self.checked_sub(rhs)
-        }
-    }
+    // /// Subtraction that doesn't allow negative [Amount]s.
+    // /// Returns [None] if either [self], [rhs] or the result is strictly negative.
+    // pub fn positive_sub(self, rhs: Amount) -> Option<Amount> {
+    //     if self.is_negative() || rhs.is_negative() || rhs > self {
+    //         None
+    //     } else {
+    //         self.checked_sub(rhs)
+    //     }
+    // }
 }
