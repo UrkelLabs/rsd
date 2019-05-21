@@ -1,4 +1,7 @@
 #[derive(Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, Hash, Debug)]
+//Possibly make this generic on the size?
+//Not sure if we'll need that, but just a reminder
+//I think we might actually want to implement this as a trait?
 pub struct Hash([u8; 32]);
 
 impl Hash {
@@ -50,3 +53,7 @@ impl From<[u8; 32]> for Hash {
         Hash(bytes)
     }
 }
+
+//Custom type specificly for Name Hashes.
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct NameHash(Hash);
