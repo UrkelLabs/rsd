@@ -1,6 +1,10 @@
 use crate::types::{Hash, Uint256};
 use std::result::Result;
 
+pub fn max_coin() -> u64 {
+    2_040_000_000_000_000
+}
+
 //Make this a compact type. TODO
 //TODO needs test
 pub fn consensus_verify_pow(hash: &Hash, bits: u32) -> bool {
