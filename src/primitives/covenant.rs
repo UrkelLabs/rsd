@@ -4,26 +4,67 @@ use crate::{Hash, Name, NameHash, Uint256};
 /// A Handshake covenant, which is a method of changing name state on the chain.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Covenant {
-    Empty(EmptyCovenant),
+    None,
     Claim(ClaimCovenant),
     Bid(BidCovenant),
     Open(OpenCovenant),
     Reveal(RevealCovenant),
+    Redeem(RedeemCovenant),
     Register(RegisterCovenant),
+    Update(UpdateCovenant),
+    Renew(RenewCovenant),
+    Transfer(TransferCovenant),
+    Finalize(FinalizeCovenant),
+    Revoke(RevokeCovenant),
 }
 
-//TODO the methods that span all Covenants -> Like from, and various helpers
-// impl Covenant {
+impl Covenant {
+    pub fn is_name(&self) -> bool {
+        match self {
+            Covenant::None => false,
+            _ => true,
+        }
+    }
 
-// }
+    pub fn is_dustworthy(&self) -> bool {
+        match self {
+            Covenant::None => true,
+            Covenant::Bid(_) => true,
+            _ => false,
+        }
+    }
 
-/// A Empty Covenant is included in the case of a payment.
-/// It effects no change on the urkel tree.
-/// In the original codebase the type of this covenant would be "none"
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct EmptyCovenant {}
+    pub fn is_linked(&self) -> bool {
+        match self {
+            Covenant::None => false,
+            Covenant::Claim(_) => false,
+            Covenant::Open(_) => false,
+            Covenant::Bid(_) => false,
+            _ => true,
+        }
+    }
 
-//TODO thought -> We could also make this a type of "NoneCovenant"
+    //Returns whether the Covenant is spendable or not.
+    pub fn is_unspendable(&self) -> bool {
+        match self {
+            Covenant::Revoke(_) => true,
+            _ => false,
+        }
+    }
+
+    //Returns whether or not the Coin inside of the covenant is spendable.
+    pub fn is_nonspendable(&self) -> bool {
+        match self {
+            Covenant::None => false,
+            Covenant::Open(_) => false,
+            Covenant::Redeem(_) => false,
+            _ => true,
+        }
+    }
+}
+
+//TODO formatting, and I think common functions to_hex, from_hex.
+//when I say formatting I mean Debug and to_string functions.
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ClaimCovenant {
@@ -78,42 +119,69 @@ pub struct RegisterCovenant {
     pub block_hash: Hash,
 }
 
-pub struct Update {
-    pub name_hash: Blake2b,
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct UpdateCovenant {
+    pub name_hash: NameHash,
     pub height: u32,
     //TODO See Above.
     pub record_data: String,
     //TODO see above.
-    pub block_hash: String,
+    pub block_hash: Hash,
 }
 
-pub struct Renew {
-    pub name_hash: Blake2b,
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct RenewCovenant {
+    pub name_hash: NameHash,
     pub height: u32,
     //TODO see above.
-    pub block_hash: String,
+    pub block_hash: Hash,
 }
 
-pub struct Transfer {
-    pub name_hash: Blake2b,
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct TransferCovenant {
+    pub name_hash: NameHash,
     pub height: u32,
-    //TODO verify type
     pub version: u32,
     pub address: Address,
 }
 
-pub struct Finalize {
-    pub name_hash: Blake2b,
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct FinalizeCovenant {
+    pub name_hash: NameHash,
     pub height: u32,
-    //TODO this should be a custom type.
-    pub name: String,
+    pub name: Name,
     //TODO see above.
     pub flags: String,
     //TODO see above
-    pub block_hash: String,
+    pub block_hash: Hash,
 }
 
-pub struct Revoke {
-    pub name_hash: Blake2b,
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct RevokeCovenant {
+    pub name_hash: NameHash,
     pub height: u32,
+}
+
+//TODO finish up testing the global functions.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_covenant_is_name() {
+        let empty_cov = Covenant::None;
+
+        assert!(!empty_cov.is_name());
+
+        let bid = BidCovenant {
+            name_hash: Default::default(),
+            height: 0,
+            name: Default::default(),
+            hash: Default::default(),
+        };
+
+        let cov = Covenant::Bid(bid);
+
+        assert!(cov.is_name());
+    }
 }
