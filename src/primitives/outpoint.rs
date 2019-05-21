@@ -1,5 +1,7 @@
 use crate::Hash;
 
+//TODO should we impl Odr?
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Outpoint {
     txid: Hash,
     index: u32,
@@ -12,5 +14,9 @@ impl Outpoint {
             txid: Default::default(),
             index: u32::max_value(),
         }
+    }
+
+    pub fn is_null(&self) -> bool {
+        *self == Outpoint::null()
     }
 }
