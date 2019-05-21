@@ -175,6 +175,42 @@ mod tests {
     }
 
     #[test]
+    fn test_headers_verify_pow_2() {
+        let nonce_bytes =
+            hex::decode("9e45f30200000000000000000000000000000000000000000000000000000000")
+                .unwrap();
+
+        let block_header = BlockHeader {
+            version: 0,
+            prev_blockhash: Hash::from(
+                "3bf6e7d1ac019692790cf617ec155dd6254fb010468fa5d1b91979cb7362d247",
+            ),
+            merkle_root: Hash::from(
+                "80f80dc13cd18c520f5322b2b8fbbad5b96f45945331eff3c8c032137c80d274",
+            ),
+            witness_root: Hash::from(
+                "44edb180cd43fca87c1c692c947381e4476c67d673b8f086a0cc783f43be379f",
+            ),
+            tree_root: Hash::from(
+                "fc1bda0f826d2bb09536d42fd8beb327ac0c8c60322ce78bbfc2af2cbec4cf4d",
+            ),
+            filter_root: Hash::from(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+            reserved_root: Hash::from(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            ),
+            time: 1558043457,
+            bits: 489684992,
+            nonce: Uint256::from_big_endian(&nonce_bytes),
+        };
+
+        let pow = block_header.verify_pow();
+
+        assert!(pow);
+    }
+
+    #[test]
     fn test_block_header_hash() {
         //Test mainnet genesis block
         let block_header = BlockHeader {
