@@ -312,6 +312,7 @@ impl Uint256 {
     }
 
     /// Converts from big endian representation bytes in memory.
+    // TODO write a test for this please.
     pub fn from_big_endian(slice: &[u8]) -> Self {
         assert!(4 * 8 >= slice.len());
         assert!(slice.len() % 8 == 0);
