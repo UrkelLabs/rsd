@@ -14,8 +14,8 @@
 use crate::protocol::consensus::max_coin;
 use std::error;
 use std::fmt;
-use std::str::FromStr;
 use std::fmt::Write;
+use std::str::FromStr;
 
 /// A set of denominations in which an Amount can be expressed.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -102,7 +102,7 @@ impl error::Error for ParseAmountError {
     }
 }
 
-#[derive(Copy, Clone, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Amount(u64);
 
 impl Amount {
@@ -276,27 +276,27 @@ impl Amount {
             // add zeroes in the end
             let width = denom.precision() as usize;
             write!(f, "{}{:0width$}", self.as_doo(), 0, width = width)?;
-        } else if denom.precision() < 0 {
-            // need to inject a comma in the number
+        // } else if denom.precision() < 0 {
+        //     // need to inject a comma in the number
 
-            // let sign = match self.is_negative() {
-            //     true => "-",
-            //     false => "",
-            // };
-            let sign = "";
-            let nb_decimals = denom.precision() as usize;
-            let real = format!("{:0width$}", self.as_doo(), width = nb_decimals);
-            if real.len() == nb_decimals {
-                write!(f, "{}0.{}", sign, &real[real.len() - nb_decimals..])?;
-            } else {
-                write!(
-                    f,
-                    "{}{}.{}",
-                    sign,
-                    &real[0..(real.len() - nb_decimals)],
-                    &real[real.len() - nb_decimals..]
-                )?;
-            }
+        //     // let sign = match self.is_negative() {
+        //     //     true => "-",
+        //     //     false => "",
+        //     // };
+        //     let sign = "";
+        //     let nb_decimals = denom.precision() as usize;
+        //     let real = format!("{:0width$}", self.as_doo(), width = nb_decimals);
+        //     if real.len() == nb_decimals {
+        //         write!(f, "{}0.{}", sign, &real[real.len() - nb_decimals..])?;
+        //     } else {
+        //         write!(
+        //             f,
+        //             "{}{}.{}",
+        //             sign,
+        //             &real[0..(real.len() - nb_decimals)],
+        //             &real[real.len() - nb_decimals..]
+        //         )?;
+        //     }
         } else {
             // denom.precision() == 0
             write!(f, "{}", self.as_doo())?;
@@ -393,9 +393,8 @@ impl Amount {
     // }
 }
 
-
 #[cfg(test)]
-mod tests{
+mod tests {
     // Import everything used above
     use super::*;
 
@@ -407,7 +406,6 @@ mod tests{
         assert_eq!(denom, Denomination::DollaryDoo);
     }
 }
-
 
 // impl Denomination {
 //     /// The number of decimal places more than a dollarydoo.
