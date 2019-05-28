@@ -17,6 +17,8 @@ blake2 = "0.8.0"
 cryptoxide = "0.1.1"
 hex = "0.3.2"
 sp800-185 = "0.2.0"
-
-
+chrono = "0.4"
+hkdf = "0.7"
+sha2 = "0.8.0"
+chacha20-poly1305-aead = "0.1.2"
 
