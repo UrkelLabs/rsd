@@ -1,6 +1,6 @@
 use chacha20_poly1305_aead;
 use hkdf::Hkdf;
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 
 use crate::Buffer;
 
@@ -104,6 +104,80 @@ fn expand(secret: Buffer, salt: Buffer, info: Buffer) -> (Vec<u8>, Vec<u8>) {
 
     //TODO double check this
     (out[0..32].to_vec(), out[32..64].to_vec())
+}
+
+pub struct SymmetricState {
+    cipher: CipherState,
+    chain: Buffer,  // chaining key
+    temp: Buffer,   // temp key
+    digest: Buffer, // handshake digest
+}
+
+impl SymmetricState {
+    pub fn init_symmetric(&mut self, protocol_name: &str) {
+        //I think this has to be a set size Buffer.
+        let empty = Buffer::new();
+        let proto = Buffer::from(protocol_name);
+
+        let digest = Sha256::digest(&proto);
+        self.digest = Buffer::from(digest.as_slice().to_vec());
+        self.chain = self.digest;
+        self.cipher.init_key(empty);
+    }
+
+    pub fn mix_key(&mut self, input: Buffer) {
+        //I think this has to be a set size Buffer.
+        let info = Buffer::new();
+        let secret = input;
+        let salt = self.chain;
+
+        let (chain, temp) = expand(secret, salt, info);
+
+        self.chain = Buffer::from(chain);
+        self.temp = Buffer::from(temp);
+
+        self.cipher.init_key(self.temp);
+    }
+
+    //TODO review
+    pub fn mix_digest(&mut self, data: Buffer, tag: Buffer) -> Buffer {
+        let mut hasher = Sha256::new();
+
+        hasher.input(self.digest);
+        hasher.input(data);
+        hasher.input(tag);
+
+        let result = hasher.result();
+
+        Buffer::from(result.as_slice().to_vec())
+    }
+
+    pub fn mix_hash(&mut self, data: Buffer, tag: Buffer) {
+        self.digest = self.mix_digest(data, tag);
+    }
+
+    //pt = plaintext, let's make that more verbose TODO so the code is more readable.
+    pub fn encrypt_hash(&mut self, pt: Buffer) -> Buffer {
+        let tag = self.cipher.encrypt(pt, self.digest);
+
+        self.mix_hash(pt, tag);
+
+        tag
+    }
+
+    //ct == CipherText, make this more verbose as above TODO
+    pub fn decrypt_hash(&mut self, ct: Buffer, tag: Buffer) -> bool {
+        let digest = self.mix_digest(ct, tag);
+
+        let result = self.cipher.decrypt(ct, tag, self.digest);
+
+        if result {
+            self.digest = digest;
+            true
+        } else {
+            false
+        }
+    }
 }
 
 //pub struct BrontideStream {}
