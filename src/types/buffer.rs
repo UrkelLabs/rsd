@@ -40,6 +40,12 @@ impl Buffer {
     }
 }
 
+impl From<Vec<u8>> for Buffer {
+    fn from(buf: Vec<u8>) -> Self {
+        Buffer(buf)
+    }
+}
+
 //Allows us to grab specific bytes from the buffer e.g.
 //grab the merkle tree from the middle of the buffer.
 impl ops::Deref for Buffer {
