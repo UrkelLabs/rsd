@@ -1,10 +1,16 @@
 use chacha20_poly1305_aead;
 use hkdf::Hkdf;
+use rand::rngs::OsRng;
+use secp256k1::rand;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use sha2::{Digest, Sha256};
 
 use crate::Buffer;
 
+//TODO move to common file once moved to new repo.
+//TODO we need to ensure the Option<> on tag is correct
 const ROTATION_INTERVAL: u32 = 1000;
+const PROTOCOL_NAME: &str = "Noise_XK_secp256k1_ChaChaPoly_SHA256";
 // pub struct Key([u8; 32]);
 //
 // TODO need to reimplement all Buffers as their own type most likely.
@@ -140,19 +146,22 @@ impl SymmetricState {
     }
 
     //TODO review
-    pub fn mix_digest(&mut self, data: Buffer, tag: Buffer) -> Buffer {
+    pub fn mix_digest(&mut self, data: Buffer, tag: Option<Buffer>) -> Buffer {
         let mut hasher = Sha256::new();
 
         hasher.input(self.digest);
         hasher.input(data);
-        hasher.input(tag);
+        if let Some(tag_ok) = tag {
+            hasher.input(tag_ok);
+        };
 
         let result = hasher.result();
 
         Buffer::from(result.as_slice().to_vec())
     }
 
-    pub fn mix_hash(&mut self, data: Buffer, tag: Buffer) {
+    //TODO test if tag as an option handles this behavior correctly.
+    pub fn mix_hash(&mut self, data: Buffer, tag: Option<Buffer>) {
         self.digest = self.mix_digest(data, tag);
     }
 
@@ -160,14 +169,14 @@ impl SymmetricState {
     pub fn encrypt_hash(&mut self, pt: Buffer) -> Buffer {
         let tag = self.cipher.encrypt(pt, self.digest);
 
-        self.mix_hash(pt, tag);
+        self.mix_hash(pt, Some(tag));
 
         tag
     }
 
     //ct == CipherText, make this more verbose as above TODO
     pub fn decrypt_hash(&mut self, ct: Buffer, tag: Buffer) -> bool {
-        let digest = self.mix_digest(ct, tag);
+        let digest = self.mix_digest(ct, Some(tag));
 
         let result = self.cipher.decrypt(ct, tag, self.digest);
 
@@ -179,6 +188,79 @@ impl SymmetricState {
         }
     }
 }
+
+pub struct HandshakeState {
+    symmetric: SymmetricState,
+    initiator: bool,
+    local_static: Buffer,
+    local_ephemeral: Buffer,
+    remote_static: Buffer,
+    remote_ephemeral: Buffer,
+}
+
+impl HandshakeState {
+    pub fn generate_key() -> Buffer {
+        let secp = Secp256k1::new();
+        let mut rng = OsRng::new().expect("OsRng");
+        let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+        Buffer::from(secret_key.to_string())
+    }
+
+    pub fn init_state(
+        &self,
+        initiator: bool,
+        prologue: &str,
+        local_pub: Buffer,
+        remote_pub: Option<Buffer>,
+    ) {
+        let remote_public_key: Buffer;
+        self.initiator = initiator;
+        self.local_static = local_pub;
+        if let Some(remote_pub_ok) = remote_pub {
+            remote_public_key = remote_pub_ok
+        } else {
+            //Should be zero key not buffer new, TODO
+            remote_public_key = Buffer::new()
+        }
+
+        self.remote_static = remote_public_key;
+
+        self.symmetric.init_symmetric(PROTOCOL_NAME);
+        //Might have to make sure this works as ascii TODO
+        self.symmetric.mix_hash(Buffer::from(prologue), None);
+
+        if initiator {
+            //TODO we need to test this behavior, but I think the general idea is we want to mix
+            //this with a zero hash buffer. so 32 bytes of 0s.
+            self.symmetric.mix_hash(remote_public_key, None)
+        } else {
+            let secp = Secp256k1::new();
+            //TODO handle this error correctly.
+            let secret_key =
+                SecretKey::from_slice(&local_pub).expect("32 bytes, within curve order");
+            let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+            //TODO review this, not sure I trust converting the public key to string then reading
+            //it in the buffer.
+            self.symmetric
+                .mix_hash(Buffer::from(public_key.to_string()), None);
+        }
+    }
+}
+
+// this.generateKey = () => secp256k1.privateKeyGenerate();
+//   }
+
+//   initState(initiator, prologue, localPub, remotePub) {
+
+//     if (initiator) {
+//       this.mixHash(remotePub);
+//     } else {
+//       const pub = getPublic(localPub);
+//       this.mixHash(pub);
+//     }
+
+//     return this;
+//   }
 
 //pub struct BrontideStream {}
 
