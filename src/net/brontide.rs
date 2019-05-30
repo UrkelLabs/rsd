@@ -490,6 +490,62 @@ impl Brontide {
         Buffer::from(act_three.to_vec())
     }
 
+    pub fn recv_act_three(&mut self, act_three: [u8; 66]) {
+        if act_three[0] != VERSION {
+            //Throw error in here
+            println!("Act three: bad version");
+        }
+
+        //TODO code smell here...
+        let s1 = Buffer::from(act_three[1..34].to_vec());
+        let p1 = Buffer::from(act_three[34..50].to_vec());
+        let s2 = Buffer::from(act_three[50..50].to_vec());
+        let p2 = Buffer::from(act_three[50..66].to_vec());
+
+        // s
+        if self.handshake_state.symmetric.decrypt_hash(s1, p1) {
+            //Throw error
+            println!("act three: bad tag");
+        }
+
+        let remote_public = s1;
+
+        let result = PublicKey::from_slice(&remote_public);
+
+        if result.is_err() {
+            //Throw error here TODO
+            println!("act three: bad key.");
+        }
+
+        self.handshake_state.remote_static = remote_public;
+
+        // se
+        let se = ecdh(
+            self.handshake_state.remote_static,
+            self.handshake_state.local_ephemeral,
+        );
+        self.handshake_state.symmetric.mix_key(se);
+
+        if self.handshake_state.symmetric.decrypt_hash(s2, p2) {
+            //Throw error, bad tag
+            println!("act three bad tag");
+        }
+
+        self.split();
+    }
+
+    //TODO write and read
+    //pub fn write(data: Buffer) {
+    //    if data.len() <= 0xffff {
+    //        //throw error -> Not sure what yet though TODO
+    //    }
+
+    //    //Needs to be a packet of length 2 + 16 + data.len() + 16
+    //    //TODO I think this is correct
+    //    let packet = Vec<u8>;
+
+    //}
+
     //TODO review thoroughly AND TEST
     pub fn split(&mut self) {
         //TODO must be buffer empty not new
@@ -516,137 +572,3 @@ impl Brontide {
         }
     }
 }
-
-//   genActThree() {
-//     const ourPubkey = getPublic(this.localStatic);
-//     const tag1 = this.encryptHash(ourPubkey);
-//     const ct = ourPubkey;
-
-//     const s = ecdh(this.remoteEphemeral, this.localStatic);
-//     this.mixKey(s);
-
-//     const tag2 = this.encryptHash(EMPTY);
-
-//     const actThree = Buffer.allocUnsafe(ACT_THREE_SIZE);
-//     actThree[0] = VERSION;
-//     ct.copy(actThree, 1);
-//     tag1.copy(actThree, 34);
-//     tag2.copy(actThree, 50);
-
-//     this.split();
-
-//     return actThree;
-//   }
-
-//   recvActThree(actThree) {
-//     assert(Buffer.isBuffer(actThree));
-
-//     if (actThree.length !== ACT_THREE_SIZE)
-//       throw new Error('Act three: bad size.');
-
-//     if (actThree[0] !== VERSION)
-//       throw new Error('Act three: bad version.');
-
-//     const s1 = actThree.slice(1, 34);
-//     const p1 = actThree.slice(34, 50);
-
-//     const s2 = actThree.slice(50, 50);
-//     const p2 = actThree.slice(50, 66);
-
-//     // s
-//     if (!this.decryptHash(s1, p1))
-//       throw new Error('Act three: bad tag.');
-
-//     const remotePub = s1;
-
-//     if (!secp256k1.publicKeyVerify(remotePub))
-//       throw new Error('Act three: bad key.');
-
-//     this.remoteStatic = remotePub;
-
-//     // se
-//     const se = ecdh(this.remoteStatic, this.localEphemeral);
-//     this.mixKey(se);
-
-//     if (!this.decryptHash(s2, p2))
-//       throw new Error('Act three: bad tag.');
-
-//     this.split();
-
-//     return this;
-//   }
-
-//   split() {
-//     const [h1, h2] = expand(EMPTY, this.chain, EMPTY);
-
-//     if (this.initiator) {
-//       const sendKey = h1;
-//       this.sendCipher.initSalt(sendKey, this.chain);
-//       const recvKey = h2;
-//       this.recvCipher.initSalt(recvKey, this.chain);
-//     } else {
-//       const recvKey = h1;
-//       this.recvCipher.initSalt(recvKey, this.chain);
-//       const sendKey = h2;
-//       this.sendCipher.initSalt(sendKey, this.chain);
-//     }
-
-//     return this;
-//   }
-
-//   write(data) {
-//     assert(Buffer.isBuffer(data));
-//     assert(data.length <= 0xffff);
-
-//     const packet = Buffer.allocUnsafe(2 + 16 + data.length + 16);
-//     packet.writeUInt16BE(data.length, 0);
-//     data.copy(packet, 2 + 16);
-
-//     const len = packet.slice(0, 2);
-//     const ta1 = packet.slice(2, 18);
-//     const msg = packet.slice(18, 18 + data.length);
-//     const ta2 = packet.slice(18 + data.length, 18 + data.length + 16);
-
-//     const tag1 = this.sendCipher.encrypt(len);
-//     tag1.copy(ta1, 0);
-
-//     const tag2 = this.sendCipher.encrypt(msg);
-//     tag2.copy(ta2, 0);
-
-//     return packet;
-//   }
-
-//   read(packet) {
-//     assert(Buffer.isBuffer(packet));
-
-//     const len = packet.slice(0, 2);
-//     const ta1 = packet.slice(2, 18);
-
-//     if (!this.recvCipher.decrypt(len, ta1))
-//       throw new Error('Bad tag for header.');
-
-//     const size = len.readUInt16BE(0, true);
-//     assert(packet.length === 18 + size + 16);
-
-//     const msg = packet.slice(18, 18 + size);
-//     const ta2 = packet.slice(18 + size, 18 + size + 16);
-
-//     if (!this.recvCipher.decrypt(msg, ta2))
-//       throw new Error('Bad tag for message.');
-
-//     return msg;
-//   }
-// }
-
-//pub struct BrontideStream {}
-
-//TODO maybe pull this entire package out into something else.
-//impl BrontideStream {
-//    //Function for connecting to outbound peers
-//    //TODO new_outbound might actually be a better name here, but we'll see.
-//    //One way to encapsulate this is to pass a mspc into here that listens to the stream of the
-//    //socket.
-//    pub fn connect() {
-
-//    }
-//}
