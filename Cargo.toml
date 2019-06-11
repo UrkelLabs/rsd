@@ -21,4 +21,6 @@ chrono = "0.4"
 hkdf = "0.7"
 sha2 = "0.8.0"
 chacha20-poly1305-aead = "0.1.2"
-
+secp256k1 = { git="https://github.com/rust-bitcoin/rust-secp256k1", features= ["rand"]}
+rand = "0.6.5"
+brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
