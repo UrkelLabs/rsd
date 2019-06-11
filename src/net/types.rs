@@ -49,15 +49,6 @@ const REQUIRED_SERVICES: u64 = NETWORK | BLOOM;
 ///Service definition for rsd - (3)
 const LOCAL_SERVICES: u64 = NETWORK | BLOOM;
 
-//TODO I think tear down SocketAddr and store more raw
-pub struct PeerAddr {
-    address: SocketAddr,
-    services: Services,
-    //TODO check type on this.
-    time: SystemTime,
-    key: IdentityKey,
-}
-
 //I think this has to be a
 //33 byte array, but let's double check this.
 //Also I think we should base this off Buffer?
@@ -66,6 +57,7 @@ pub struct IdentityKey([u8; 33]);
 
 //Service Enum
 pub enum Services {
+    None,
     Network,
     Bloom,
     FullNode,
@@ -76,6 +68,7 @@ pub enum Services {
 impl Services {
     pub fn value(&self) -> u64 {
         match *self {
+            Services::None => 0,
             //1
             Services::Network => NETWORK,
             //2
@@ -84,5 +77,44 @@ impl Services {
             Services::RequiredServices => REQUIRED_SERVICES,
             Services::LocalServices => LOCAL_SERVICES,
         }
+    }
+}
+
+//TODO maybe move this to it's own file.
+//TODO I think tear down SocketAddr and store more raw
+#[derive(Clone, Debug)]
+pub struct PeerAddr {
+    address: SocketAddr,
+    services: Services,
+    //TODO check type on this.
+    time: SystemTime,
+    key: IdentityKey,
+}
+
+impl PeerAddr {
+    //TODO probably include services in the new function, instead of setting it to 0.
+    pub fn new(addr: SocketAddr, key: IdentityKey) -> PeerAddr {
+        PeerAddr {
+            address: addr,
+            key,
+            time: SystemTime::now(),
+            //Init as none, can change later.
+            services: Services::None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialOrd, PartialEq)]
+pub struct ProtocolVersion(pub u32);
+
+impl Default for ProtocolVersion {
+    fn default() -> ProtocolVersion {
+        ProtocolVersion(PROTOCOL_VERSION)
+    }
+}
+
+impl From<ProtocolVersion> for u32 {
+    fn from(v: ProtocolVersion) -> u32 {
+        v.0
     }
 }
