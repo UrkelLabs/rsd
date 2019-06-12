@@ -24,3 +24,6 @@ chacha20-poly1305-aead = "0.1.2"
 secp256k1 = { git="https://github.com/rust-bitcoin/rust-secp256k1", features= ["rand"]}
 rand = "0.6.5"
 brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
+romio = "0.3.0-alpha.8"
+base32 = "0.4.0"
+futures-preview = "=0.3.0-alpha.16"
