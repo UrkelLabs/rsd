@@ -11,12 +11,15 @@ impl Buffer {
         Buffer::default()
     }
 
+    //Unsigned Integers - Little Endian
     pub fn write_u8(&mut self, data: u8) {
         self.0.extend_from_slice(&data.to_le_bytes());
     }
 
-    //Write u32 in Little Endian format
-    //Possibly return the amount of data written //TODO - see if needed anywhere.
+    pub fn write_u16(&mut self, data: u16) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
     pub fn write_u32(&mut self, data: u32) {
         self.0.extend_from_slice(&data.to_le_bytes());
     }
@@ -25,12 +28,85 @@ impl Buffer {
         self.0.extend_from_slice(&data.to_le_bytes());
     }
 
+    //TODO u128
+
+    pub fn write_u256(&mut self, data: Uint256) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
+    //Big Endian
+    pub fn write_u8_be(&mut self, data: u8) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_u16_be(&mut self, data: u16) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_u32_be(&mut self, data: u32) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_u64_be(&mut self, data: u64) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    //TODO u128, and u256
+
+    //Signed Integers
+    pub fn write_i8(&mut self, data: u8) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
+    pub fn write_i16(&mut self, data: u16) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
+    pub fn write_i32(&mut self, data: u32) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
+    pub fn write_i64(&mut self, data: u64) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
+    //Big Endian
+    pub fn write_i8_be(&mut self, data: u8) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_i16_be(&mut self, data: u16) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_i32_be(&mut self, data: u32) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_i64_be(&mut self, data: u64) {
+        self.0.extend_from_slice(&data.to_be_bytes());
+    }
+
+    pub fn write_bytes(&mut self, bytes: &[u8]) {
+        //TODO should we clone here or just pass in
+        self.0.extend_from_slice(bytes);
+    }
+
+    pub fn write_str(&mut self, string: &str) {
+        self.0.extend_from_slice(string.as_bytes());
+    }
+
+    pub fn write_string(&mut self, string: String) {
+        self.0.extend_from_slice(string.as_bytes());
+    }
+
     pub fn write_hash(&mut self, hash: Hash) {
         self.0.extend(&hash.to_array());
     }
 
-    pub fn write_u256(&mut self, data: Uint256) {
-        self.0.extend_from_slice(&data.to_le_bytes());
+    pub fn fill(&mut self, value: u8, amount: usize) {
+        let fill_amount = vec![value; amount];
+        self.0.extend(fill_amount);
     }
 
     //Return Hex string of the buffer.
