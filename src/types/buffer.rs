@@ -11,6 +11,10 @@ impl Buffer {
         Buffer::default()
     }
 
+    pub fn write_u8(&mut self, data: u8) {
+        self.0.extend_from_slice(&data.to_le_bytes());
+    }
+
     //Write u32 in Little Endian format
     //Possibly return the amount of data written //TODO - see if needed anywhere.
     pub fn write_u32(&mut self, data: u32) {
