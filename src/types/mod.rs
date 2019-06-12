@@ -1,5 +1,6 @@
 pub mod amount;
 pub mod buffer;
+pub mod difficulty;
 pub mod hash;
 pub mod name;
 pub mod uint;

@@ -46,6 +46,20 @@ impl From<Vec<u8>> for Buffer {
     }
 }
 
+//TODO review, seems inefficent
+impl From<&str> for Buffer {
+    fn from(buf: &str) -> Self {
+        Buffer(buf.as_bytes().to_vec())
+    }
+}
+
+//TODO review, seems inefficent
+impl From<String> for Buffer {
+    fn from(buf: String) -> Self {
+        Buffer(buf.as_bytes().to_vec())
+    }
+}
+
 //Allows us to grab specific bytes from the buffer e.g.
 //grab the merkle tree from the middle of the buffer.
 impl ops::Deref for Buffer {
