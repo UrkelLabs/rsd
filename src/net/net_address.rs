@@ -1,3 +1,4 @@
+use crate::net::types::{IdentityKey, Services};
 use crate::protocol::encoding::Encodable;
 use crate::types::Buffer;
 use chrono::{DateTime, Utc};
@@ -5,18 +6,17 @@ use std::net::SocketAddr;
 
 //TODO I think tear down SocketAddr and store more raw
 #[derive(Clone, Debug)]
-pub struct PeerAddr {
+pub struct NetAddress {
     pub address: SocketAddr,
     pub services: Services,
-    //TODO check type on this.
     pub time: DateTime<Utc>,
     pub key: IdentityKey,
 }
 
-impl PeerAddr {
+impl NetAddress {
     //TODO probably include services in the new function, instead of setting it to 0.
-    pub fn new(addr: SocketAddr, key: IdentityKey) -> PeerAddr {
-        PeerAddr {
+    pub fn new(addr: SocketAddr, key: IdentityKey) -> Self {
+        NetAddress {
             address: addr,
             key,
             time: Utc::now(),
@@ -26,7 +26,7 @@ impl PeerAddr {
     }
 }
 
-impl Encodable for PeerAddr {
+impl Encodable for NetAddress {
     fn size() -> u32 {
         88
     }

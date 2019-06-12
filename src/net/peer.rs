@@ -1,5 +1,6 @@
+use crate::net::net_address::NetAddress;
 use crate::net::packets::VersionPacket;
-use crate::net::types::{IdentityKey, PeerAddr, ProtocolVersion};
+use crate::net::types::{IdentityKey, ProtocolVersion};
 use crate::types::difficulty::Difficulty;
 use brontide::BrontideStream;
 use chrono::{DateTime, Utc};
@@ -28,8 +29,8 @@ pub struct PeerLiveInfo {
 pub struct PeerInfo {
     pub user_agent: String,
     pub version: ProtocolVersion,
-    pub address: PeerAddr,
-    pub local_address: PeerAddr,
+    pub address: NetAddress,
+    pub local_address: NetAddress,
     pub direction: Direction,
     pub live_info: Arc<RwLock<PeerLiveInfo>>,
 }
@@ -56,7 +57,7 @@ impl Peer {
     //Connect to a new peer.
     //TODO return a result
     //TODO should be a custom key type. - not sure if we want to store this inside of the peer.
-    pub async fn connect(addr: PeerAddr, key: [u8; 32]) {
+    pub async fn connect(addr: NetAddress, key: [u8; 32]) {
         //I think this returns a result.
         //AWait this. as it returns a future.
         //Result should be returned
