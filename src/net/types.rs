@@ -1,61 +1,87 @@
+use crate::net::common::{
+    BLOOM, FULL_NODE, LOCAL_SERVICES, NETWORK, PROTOCOL_VERSION, REQUIRED_SERVICES,
+};
+use base32;
+use hex;
+use std::fmt;
 use std::net::SocketAddr;
+use std::ops;
+use std::str::FromStr;
 use std::time::SystemTime;
 
-/// Default protocol version
-pub const PROTOCOL_VERSION: u32 = 1;
-
-/// Minimum protocol version that we'll talk to
-pub const MIN_PROTOCOL_VERSION: u32 = 1;
-
-/// User agent passed along in messages
-pub const USER_AGENT: &str = concat!("RSD:", env!("CARGO_PKG_VERSION"));
-
-///Maximum message size that can be sent ~8mb
-pub const MAX_MESSAGE_SIZE: u32 = 8_000_000;
-
-///Amount of time to ban misbehaving peers
-pub const BAN_TIME: u32 = 86_400;
-
-///Ban score threshold before ban is placed in effect
-pub const BAN_SCORE: u32 = 100;
-
-///Maximum inv/getdata size
-pub const MAX_INV: u32 = 50_000;
-
-///Maximum number of requests
-pub const MAX_REQUEST: u32 = 5_000;
-
-///Maximum number of block requests
-pub const MAX_BLOCK_REQUEST: u32 = 50_000 + 1_000;
-
-///Maximum number of transaction requests
-pub const MAX_TX_REQUEST: u32 = 10_000;
-
-///Maximum number of claim requests
-pub const MAX_CLAIM_REQUEST: u32 = 1_000;
-
-/// Service constant for Network capabilities (1 << 0)
-const NETWORK: u64 = 1;
-
-///Service constant for Bloom Filter capabilities
-const BLOOM: u64 = (1 << 1);
-
-///Service definition for a full node - (3)
-const FULL_NODE: u64 = NETWORK | BLOOM;
-
-///Service definition required to communicate - (3)
-const REQUIRED_SERVICES: u64 = NETWORK | BLOOM;
-
-///Service definition for rsd - (3)
-const LOCAL_SERVICES: u64 = NETWORK | BLOOM;
-
-//I think this has to be a
-//33 byte array, but let's double check this.
-//Also I think we should base this off Buffer?
 //TODO new type called SetBuffer? Which has a preset length.
+//TODO extended primitives Buffer with capacity.
+#[derive(Clone)]
 pub struct IdentityKey([u8; 33]);
 
+impl IdentityKey {
+    pub fn as_array(self) -> [u8; 33] {
+        self.0
+    }
+}
+
+impl From<[u8; 33]> for IdentityKey {
+    fn from(key: [u8; 33]) -> Self {
+        IdentityKey(key)
+    }
+}
+
+impl ops::Deref for IdentityKey {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl AsRef<[u8]> for IdentityKey {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl AsMut<[u8]> for IdentityKey {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.0
+    }
+}
+
+impl FromStr for IdentityKey {
+    //TODO wrap all errors here
+    type Err = hex::FromHexError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.len() {
+            64 => {
+                let mut bytes = [0; 33];
+                let bytes_slice = hex::decode(s)?;
+
+                bytes.copy_from_slice(&bytes_slice);
+
+                Ok(IdentityKey(bytes))
+            }
+            53 => {
+                //TODO use a ? here, and then map it to the above error
+                let key = base32::decode(base32::Alphabet::RFC4648 { padding: false }, s).unwrap();
+
+                let mut bytes = [0; 33];
+                bytes.copy_from_slice(&key);
+
+                Ok(IdentityKey(bytes))
+            }
+            _ => Err(hex::FromHexError::InvalidStringLength),
+        }
+    }
+}
+
+impl fmt::Debug for IdentityKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "IdentityKey: {}", hex::encode(self.0.to_vec()))
+    }
+}
+
 //Service Enum
+#[derive(Debug, Clone)]
 pub enum Services {
     None,
     Network,
@@ -84,11 +110,11 @@ impl Services {
 //TODO I think tear down SocketAddr and store more raw
 #[derive(Clone, Debug)]
 pub struct PeerAddr {
-    address: SocketAddr,
-    services: Services,
+    pub address: SocketAddr,
+    pub services: Services,
     //TODO check type on this.
-    time: SystemTime,
-    key: IdentityKey,
+    pub time: SystemTime,
+    pub key: IdentityKey,
 }
 
 impl PeerAddr {
@@ -103,6 +129,8 @@ impl PeerAddr {
         }
     }
 }
+
+//TODO from string for PeerAddr
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialOrd, PartialEq)]
 pub struct ProtocolVersion(pub u32);
