@@ -133,6 +133,8 @@ impl PeerAddr {
     }
 }
 
+//PeerAddr impl ToString
+
 impl Encodable for PeerAddr {
     fn size() -> u32 {
         88
@@ -145,10 +147,11 @@ impl Encodable for PeerAddr {
         buffer.write_u32(self.services.value());
         buffer.write_u32(0);
         buffer.write_u8(0);
-        // buffer.writ TODO
-        // buffer. TODO
-        // buffer.write_u16(self.address.port());
-        // buffer write bytes
+        buffer.write_string(self.address.ip().to_string());
+        buffer.fill(0, 20);
+        buffer.write_u16(self.address.port());
+        buffer.write_bytes(&self.key);
+
         buffer
     }
 }
