@@ -1,3 +1,4 @@
+use crate::net::packets::VersionPacket;
 use crate::net::types::{IdentityKey, PeerAddr, ProtocolVersion};
 use crate::types::difficulty::Difficulty;
 use brontide::BrontideStream;
@@ -60,39 +61,53 @@ impl Peer {
         //AWait this. as it returns a future.
         //Result should be returned
         // let socket = TcpStream::connect(&addr.address).await.expect("socket should connect");
-        let socket = TcpStream::connect(&"173.255.209.126:13038".parse().unwrap()).await.unwrap();
+        let socket = TcpStream::connect(&"173.255.209.126:13038".parse().unwrap())
+            .await
+            .unwrap();
 
         let mut stream = BrontideStream::connect(socket, key, addr.key.as_array()).await;
     }
 
     //Accept an incoming connection.
     pub fn accept() {}
+
+    pub fn send_version(&self) {
+        //Need to pass in height dynamically. TODO
+        //Also need to pass in no_relay dynamically TODO
+        let packet = VersionPacket::new(self.info.address, 0, false);
+        //Each packet might have a different timeout requirement -> We should probably set this in
+        //the packet struct itself.
+
+        //We need to encode this packet, and then frame it.
+        //
+        //After that is done, we send it through the brontide.
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::executor;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;
-    use futures::executor;
 
-    #[test]
-    fn test_peer_connect() {
-        executor::block_on(async {
-        //TODO get the port from the network.
-        let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(172, 104, 214, 189)), 13038);
+    // #[test]
+    //fn test_peer_connect() {
+    //    executor::block_on(async {
+    //    //TODO get the port from the network.
+    //    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(172, 104, 214, 189)), 13038);
 
-        let key =
-            IdentityKey::from_str("ajdzrpoxsusaw4ixq4ttibxxsuh5fkkduc5qszyboidif2z25i362").unwrap();
+    //    let key =
+    //        IdentityKey::from_str("ajdzrpoxsusaw4ixq4ttibxxsuh5fkkduc5qszyboidif2z25i362").unwrap();
 
-        let local_key = [1; 32];
+    //    let local_key = [1; 32];
 
-        let peer_address = PeerAddr::new(address, key);
-        let peer = Peer::connect(peer_address, local_key).await;
+    //    let peer_address = PeerAddr::new(address, key);
+    //    let peer = Peer::connect(peer_address, local_key).await;
 
-        ()
-    })
-    }
+    //    ()
+    //})
+    //}
 
 }
 

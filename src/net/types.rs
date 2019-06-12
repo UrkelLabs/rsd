@@ -1,7 +1,10 @@
 use crate::net::common::{
     BLOOM, FULL_NODE, LOCAL_SERVICES, NETWORK, PROTOCOL_VERSION, REQUIRED_SERVICES,
 };
+use crate::protocol::encoding::Encodable;
+use crate::types::Buffer;
 use base32;
+use chrono::{DateTime, Utc};
 use hex;
 use std::fmt;
 use std::net::SocketAddr;
@@ -92,7 +95,7 @@ pub enum Services {
 }
 
 impl Services {
-    pub fn value(&self) -> u64 {
+    pub fn value(&self) -> u32 {
         match *self {
             Services::None => 0,
             //1
@@ -113,7 +116,7 @@ pub struct PeerAddr {
     pub address: SocketAddr,
     pub services: Services,
     //TODO check type on this.
-    pub time: SystemTime,
+    pub time: DateTime<Utc>,
     pub key: IdentityKey,
 }
 
@@ -123,12 +126,34 @@ impl PeerAddr {
         PeerAddr {
             address: addr,
             key,
-            time: SystemTime::now(),
+            time: Utc::now(),
             //Init as none, can change later.
             services: Services::None,
         }
     }
 }
+
+impl Encodable for PeerAddr {
+    fn size() -> u32 {
+        88
+    }
+
+    fn encode(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_u64(self.time.timestamp() as u64);
+        buffer.write_u32(self.services.value());
+        buffer.write_u32(0);
+        buffer.write_u8(0);
+        // buffer.writ TODO
+        // buffer. TODO
+        // buffer.write_u16(self.address.port());
+        // buffer write bytes
+        buffer
+    }
+}
+
+//add default -> Include default services in there.
 
 //TODO from string for PeerAddr
 
