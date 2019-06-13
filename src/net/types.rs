@@ -107,6 +107,13 @@ impl Services {
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialOrd, PartialEq)]
 pub struct ProtocolVersion(pub u32);
 
+//Probably a better way to do this.
+impl ProtocolVersion {
+    pub fn as_u32(&self) -> u32 {
+        self.0
+    }
+}
+
 impl Default for ProtocolVersion {
     fn default() -> ProtocolVersion {
         ProtocolVersion(PROTOCOL_VERSION)
