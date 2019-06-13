@@ -105,8 +105,13 @@ impl Buffer {
     }
 
     pub fn fill(&mut self, value: u8, amount: usize) {
+        //See what's faster, this or resize_with/resize TODO
         let fill_amount = vec![value; amount];
         self.0.extend(fill_amount);
+    }
+
+    pub fn extend(&mut self, buffer: Buffer) {
+        self.0.extend_from_slice(&buffer);
     }
 
     //Return Hex string of the buffer.
