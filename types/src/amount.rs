@@ -11,7 +11,8 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-use crate::protocol::consensus::max_coin;
+//TODO fix here.
+// use crate::protocol::consensus::max_coin;
 use std::error;
 use std::fmt;
 use std::fmt::Write;
@@ -125,9 +126,9 @@ impl Amount {
 
     /// The maximum value of an [Amount].
     // TODO implement
-    pub fn max_value() -> Amount {
-        Amount(max_coin())
-    }
+    // pub fn max_value() -> Amount {
+    //     Amount(max_coin())
+    // }
 
     /// The minimum value of an [Amount].
     pub fn min_value() -> Amount {
