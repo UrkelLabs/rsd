@@ -1,4 +1,4 @@
-use crate::types::{Hash, Uint256};
+use crate::{Hash, Uint256};
 use hex::encode;
 use std::ops;
 
