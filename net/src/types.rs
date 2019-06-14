@@ -1,4 +1,4 @@
-use crate::net::common::{
+use crate::common::{
     BLOOM, FULL_NODE, LOCAL_SERVICES, NETWORK, PROTOCOL_VERSION, REQUIRED_SERVICES,
 };
 use base32;
@@ -9,7 +9,7 @@ use std::str::FromStr;
 
 //TODO new type called SetBuffer? Which has a preset length.
 //TODO extended primitives Buffer with capacity.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct IdentityKey([u8; 33]);
 
 impl IdentityKey {
@@ -79,7 +79,7 @@ impl fmt::Debug for IdentityKey {
 }
 
 //Service Enum
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Services {
     None,
     Network,

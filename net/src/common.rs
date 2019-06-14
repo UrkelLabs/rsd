@@ -4,6 +4,7 @@ pub const PROTOCOL_VERSION: u32 = 1;
 /// Minimum protocol version that we'll talk to
 pub const MIN_PROTOCOL_VERSION: u32 = 1;
 
+//TODO change this now since net version might be different than Rust
 /// User agent passed along in messages
 pub const USER_AGENT: &str = concat!("RSD:", env!("CARGO_PKG_VERSION"));
 

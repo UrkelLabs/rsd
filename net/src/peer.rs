@@ -1,9 +1,10 @@
-use crate::net::net_address::NetAddress;
-use crate::net::packets::VersionPacket;
-use crate::net::types::{IdentityKey, ProtocolVersion};
-use crate::types::difficulty::Difficulty;
+use crate::net_address::NetAddress;
+use crate::packets::VersionPacket;
+//TODO reimplement when types crate is available.
+use crate::types::{IdentityKey, ProtocolVersion};
 use brontide::BrontideStream;
 use chrono::{DateTime, Utc};
+use handshake_types::difficulty::Difficulty;
 use romio::TcpStream;
 use std::sync::{Arc, RwLock};
 

@@ -1,11 +1,12 @@
-use crate::net::types::{IdentityKey, Services};
-use crate::protocol::encoding::Encodable;
-use crate::types::Buffer;
+use crate::types::{IdentityKey, Services};
 use chrono::{DateTime, Utc};
+use handshake_protocol::encoding::Encodable;
+use handshake_types::Buffer;
 use std::net::SocketAddr;
+use std::str::FromStr;
 
 //TODO I think tear down SocketAddr and store more raw
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct NetAddress {
     pub address: SocketAddr,
     pub services: Services,
@@ -47,6 +48,12 @@ impl Encodable for NetAddress {
     }
 }
 
+// impl FromStr for NetAddress {
+
+// }
+
 //PeerAddr impl ToString
 //add default -> Include default services in there.
 //TODO from string for PeerAddr
+//
+//TODO make net it's own package in fact, let's make everything it's own package.

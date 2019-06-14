@@ -1,0 +1,16 @@
+[package]
+name = "handshake-net"
+version = "0.1.0"
+authors = ["kilpatty <seanpkilgarriff@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = "0.4.0"
+base32 = "0.4.0"
+hex = "0.3.2"
+brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
+romio = "0.3.0-alpha.8"
+handshake_types = { path="../types" }
+handshake_protocol = { path="../protocol" }
+#Remove this and move to dev, if we don't use async/await in the net lib. Otherwise make this optional like we do w/ brontide
+futures-preview = {version="=0.3.0-alpha.16", features = ["async-await", "nightly"] }
