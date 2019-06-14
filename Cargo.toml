@@ -1,29 +1,40 @@
-[package]
-name = "rsd"
-version = "0.1.0"
-authors = ["Handshake Alliance"]
-license = "MIT"
-edition = "2018"
-homepage = "https://github.com/handshakealliance/rsd"
-repository = "https://github.com/handshakealliance/rsd"
-documentation = "https://docs.rs/rsd"
-description = "A Handshake full implementation written entirely in Rust"
-keywords = [ "crypto", "handshake", "dns" ]
-readme = "README.md"
+# [package]
+# name = "rsd"
+# version = "0.1.0"
+# authors = ["Handshake Alliance"]
+# license = "MIT"
+# edition = "2018"
+# homepage = "https://github.com/handshakealliance/rsd"
+# repository = "https://github.com/handshakealliance/rsd"
+# documentation = "https://docs.rs/rsd"
+# description = "A Handshake full implementation written entirely in Rust"
+# keywords = [ "crypto", "handshake", "dns" ]
+# readme = "README.md"
 
-[dependencies]
-# rust-crypto = "^0.2"
-blake2 = "0.8.0"
-cryptoxide = "0.1.1"
-hex = "0.3.2"
-sp800-185 = "0.2.0"
-chrono = "0.4"
-hkdf = "0.7"
-sha2 = "0.8.0"
-chacha20-poly1305-aead = "0.1.2"
-secp256k1 = { git="https://github.com/rust-bitcoin/rust-secp256k1", features= ["rand"]}
-rand = "0.6.5"
-brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
-romio = "0.3.0-alpha.8"
-base32 = "0.4.0"
-futures-preview = "=0.3.0-alpha.16"
+[workspace]
+
+members = [
+"protocol",
+"primitives",
+"mining",
+"blockchain",
+"net",
+"types"
+]
+
+# [dependencies]
+# # rust-crypto = "^0.2"
+# blake2 = "0.8.0"
+# cryptoxide = "0.1.1"
+# hex = "0.3.2"
+# sp800-185 = "0.2.0"
+# chrono = "0.4"
+# hkdf = "0.7"
+# sha2 = "0.8.0"
+# chacha20-poly1305-aead = "0.1.2"
+# secp256k1 = { git="https://github.com/rust-bitcoin/rust-secp256k1", features= ["rand"]}
+# rand = "0.6.5"
+# brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
+# romio = "0.3.0-alpha.8"
+# base32 = "0.4.0"
+# futures-preview = "=0.3.0-alpha.16"
