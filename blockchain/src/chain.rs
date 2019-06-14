@@ -1,4 +1,4 @@
-use crate::protocol::network::Network;
+use handshake_protocol::network::Network;
 
 pub struct Chain {
     network: Network,
