@@ -1,5 +1,5 @@
 [package]
-name = "primitives"
+name = "handshake_primitives"
 version = "0.1.0"
 authors = ["kilpatty <seanpkilgarriff@gmail.com>"]
 edition = "2018"
