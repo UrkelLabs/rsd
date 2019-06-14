@@ -3,7 +3,7 @@ use hex::encode;
 use std::ops;
 
 //Our version of Buffer that is implemented in bio - > https://github.com/bcoin-org/bufio
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct Buffer(Vec<u8>);
 
 impl Buffer {
