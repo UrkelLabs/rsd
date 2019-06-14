@@ -1,8 +1,11 @@
 use crate::mining::block_template::BlockTemplate;
+use crate::protocol::consensus::consensus_verify_pow;
 use crate::types::{Buffer, Hash, Uint256};
 use crate::Transaction;
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
+
+use sp800_185::KMac;
 
 //FROM parity Bitcoin -> https://github.com/paritytech/parity-bitcoin/blob/master/miner/src/cpu_miner.rs
 /// Instead of serializing `BlockHeader` from scratch over and over again,
@@ -66,30 +69,43 @@ impl BlockHeaderBytes {
         let data = &self.data[0..NONCE_POSITION];
         let nonce = &self.data[NONCE_POSITION..self.data.len()];
 
-        // let mut buf = vec![0; ];
-        // let mut kmac = KMac::new_kmac128(nonce, []);
-        // kmac.update(data);
-        // kmac.finalize(&mut buf);
+        let mut key = [0; 32];
 
-        let mut hasher = Blake2b::new(32);
-        hasher.input(&hex::decode(self.data).unwrap());
-        let mut out = [0; 32];
+        let mut kmac = KMac::new_kmac256(nonce, &[]);
+        kmac.update(&data);
+        kmac.finalize(&mut key);
 
-        hasher.result(&mut out);
+        let mut hasher = Blake2b::new_keyed(32, &key);
+        hasher.input(&data);
 
-        Hash::from(hex::encode(out))
+        let mut hash = [0; 32];
+
+        hasher.result(&mut hash);
+
+        Hash::from(hash)
     }
 }
 
-/// This trait should be implemented by coinbase transaction.
-pub trait CoinbaseTransactionBuilder {
-    /// Should be used to increase number of hash possibities for miner
-    fn set_extranonce(&mut self, extranonce: &[u8]);
-    /// Returns transaction hash
-    fn hash(&self) -> Hash;
-    // /// Coverts transaction into raw bytes
-    fn finish(self) -> Transaction;
-}
+// /// This trait should be implemented by coinbase transaction.
+// pub trait CoinbaseTransactionBuilder {
+//     /// Should be used to increase number of hash possibities for miner
+//     fn set_extranonce(&mut self, extranonce: &[u8]);
+//     /// Returns transaction hash
+//     fn hash(&self) -> Hash;
+//     // /// Coverts transaction into raw bytes
+//     fn finish(self) -> Transaction;
+// }
+
+//pub struct CoinbaseTransactionBuilder {
+//    //TODO make this a custom hash type, and value type.
+//    // pub fn new(hash: Hash, value: u64) -> Self {
+
+//    //     // let transaction = Transaction {
+//    //     // }
+
+//    // }
+
+//}
 
 /// Cpu miner solution.
 pub struct Solution {
@@ -115,16 +131,18 @@ pub struct Solution {
 /// TODO extranonce == u32??
 /// extranonce maybe should be a Uint256? TODO XXX TODO Update extranonce should definitely be
 /// u32.... But we can switch that later.
-pub fn find_solution<T>(
+// pub fn find_solution<T>(
+pub fn find_solution(
     block: &BlockTemplate,
-    mut coinbase_transaction_builder: T,
-    max_extranonce: Uint256,
+    // mut coinbase_transaction_builder: T,
+    // max_extranonce: Uint256,
+    max_extranonce: u32,
 ) -> Option<Solution>
-where
-    T: CoinbaseTransactionBuilder,
+// where
+    // T: CoinbaseTransactionBuilder,
 {
-    let mut extranonce = Uint256::default();
-    let mut extranonce_bytes = [0u8; 32];
+    let mut extranonce: u32 = 0;
+    let mut extranonce_bytes = [0u8; 4];
 
     let mut header_bytes = BlockHeaderBytes::new(
         block.version,
@@ -142,7 +160,7 @@ where
         // recalculate merkle root hash
         let coinbase_hash = coinbase_transaction_builder.hash();
         let mut merkle_tree = vec![&coinbase_hash];
-        merkle_tree.extend(block.transactions.iter().map(|tx| &tx.hash()));
+        // merkle_tree.extend(block.transactions.iter().map(|tx| &tx.hash()));
         //TODO
         // let merkle_root_hash = merkle_root(&merkle_tree);
         let merkle_root_hash = Hash::default();
@@ -150,13 +168,13 @@ where
         // update header with new merkle root hash
         header_bytes.set_merkle_root_hash(&merkle_root_hash);
 
-        let nonce = Uint256::default();
+        let mut nonce = Uint256::default();
 
         loop {
             // Check if this should be reference or not.
             header_bytes.set_nonce(&nonce);
             let hash = header_bytes.hash();
-            if is_valid_proof_of_work_hash(block.bits, &hash) {
+            if consensus_verify_pow(&hash, block.bits) {
                 let solution = Solution {
                     nonce,
                     extranonce,
@@ -184,7 +202,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::{find_solution, CoinbaseTransactionBuilder};
 
     pub struct P2shCoinbaseTransactionBuilder {
         transaction: Transaction,

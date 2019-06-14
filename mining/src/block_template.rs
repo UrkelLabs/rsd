@@ -33,20 +33,48 @@ pub struct BlockTemplate {
     pub version: u32,
     /// The hash of previous block
     pub previous_header_hash: Hash,
+    pub tree_root: Hash,
+    pub reserved_root: Hash,
     /// The current time as seen by the server
     // We use u64 in blocks, double check this TODO
     pub time: u64,
-    /// The compressed difficulty
+    pub median_time: u64,
+
+    //TODO see: https://github.com/handshake-org/hsd/blob/master/lib/blockchain/chain.js#L3480
+    // pub flags:
+    // To show who the block is mined by: eg. "Mined by Bitamin" see: https://github.com/handshake-org/hsd/blob/master/lib/mining/miner.js#L472
+    // Should default to "mined by RSD" TODO
+    pub coinbase_flags: String,
+    // /// The compressed difficulty
     // TODO convert back to Compact type, but use u32 for now.
     pub bits: u32,
     /// Block height
     pub height: u32,
+
+    //Halvening interval - Should probably default to this don't know if we need to it in memory,
+    //TODO Need to implement protocol constants.
+    pub interval: u32,
+
+    pub address: Hash,
     /// Block transactions (excluding coinbase)
     pub transactions: Vec<Transaction>,
     /// Total funds available for the coinbase (in Satoshis)
     pub coinbase_value: u64,
+    //TODO figure out if all of these are needed or not.
     // /// Number of bytes allowed in the block
-    // pub size_limit: u32,
+    pub size_limit: u32,
     // /// Number of sigops allowed in the block
-    // pub sigop_limit: u32,
+    pub sigop_limit: u32,
+    pub weight_limit: u32,
+    //TODO need open limits, bid limits, airdrop limits etc.
+}
+
+impl BlockTemplate {
+
+    //Make Value a custom type here...
+    pub fn get_reward(&self) -> u64 {
+
+    }
+
+
 }
