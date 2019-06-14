@@ -6,10 +6,10 @@ pub mod outpoint;
 pub mod output;
 pub mod transaction;
 
-use crate::address::Address;
-use crate::covenant::Covenant;
-use crate::headers::BlockHeader;
-use crate::input::Input;
-use crate::outpoint::Outpoint;
-use crate::output::Output;
-use crate::transaction::Transaction;
+pub use crate::address::Address;
+pub use crate::covenant::Covenant;
+pub use crate::headers::BlockHeader;
+pub use crate::input::Input;
+pub use crate::outpoint::Outpoint;
+pub use crate::output::Output;
+pub use crate::transaction::Transaction;
