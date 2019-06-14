@@ -38,11 +38,11 @@ pub const NETWORK: u32 = 1;
 ///Service constant for Bloom Filter capabilities
 pub const BLOOM: u32 = (1 << 1);
 
-///Service definition for a full node - (3)
-pub const FULL_NODE: u32 = NETWORK | BLOOM;
+///Service definition for a full node - (1)
+pub const FULL_NODE: u32 = NETWORK;
 
-///Service definition required to communicate - (3)
-pub const REQUIRED_SERVICES: u32 = NETWORK | BLOOM;
+///Service definition required to communicate - (1)
+pub const REQUIRED_SERVICES: u32 = NETWORK;
 
-///Service definition for rsd - (3)
-pub const LOCAL_SERVICES: u32 = NETWORK | BLOOM;
+///Service definition for rsd - (1)
+pub const LOCAL_SERVICES: u32 = NETWORK;
