@@ -11,6 +11,9 @@ impl IdentityKey {
     pub fn as_array(self) -> [u8; 33] {
         self.0
     }
+
+    //To hex
+    //To Base32
 }
 
 impl From<[u8; 33]> for IdentityKey {
@@ -55,8 +58,7 @@ impl AsMut<[u8]> for IdentityKey {
 }
 
 impl FromStr for IdentityKey {
-    //TODO wrap all errors here
-    type Err = hex::FromHexError;
+    type Err = error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.len() {
@@ -69,15 +71,15 @@ impl FromStr for IdentityKey {
                 Ok(IdentityKey(bytes))
             }
             53 => {
-                //TODO use a ? here, and then map it to the above error
-                let key = base32::decode(base32::Alphabet::RFC4648 { padding: false }, s).unwrap();
+                let key = base32::decode(base32::Alphabet::RFC4648 { padding: false }, s)
+                    .ok_or_else(|| error::Error::Base32)?;
 
                 let mut bytes = [0; 33];
                 bytes.copy_from_slice(&key);
 
                 Ok(IdentityKey(bytes))
             }
-            _ => Err(hex::FromHexError::InvalidStringLength),
+            _ => Err(error::Error::InvalidIdentityKey),
         }
     }
 }
