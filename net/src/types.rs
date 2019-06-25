@@ -1,8 +1,10 @@
 use crate::common::{
     BLOOM, FULL_NODE, LOCAL_SERVICES, NETWORK, PROTOCOL_VERSION, REQUIRED_SERVICES,
 };
+use crate::error;
 use base32;
 use hex;
+use std::convert::TryFrom;
 use std::fmt;
 use std::ops;
 use std::str::FromStr;
@@ -21,6 +23,21 @@ impl IdentityKey {
 impl From<[u8; 33]> for IdentityKey {
     fn from(key: [u8; 33]) -> Self {
         IdentityKey(key)
+    }
+}
+
+impl TryFrom<Vec<u8>> for IdentityKey {
+    type Error = error::Error;
+
+    fn try_from(vec: Vec<u8>) -> Result<Self, Self::Error> {
+        if vec.len() != 33 {
+            return Err(error::Error::InvalidIdentityKey);
+        }
+
+        let mut arr = [0; 33];
+        arr.copy_from_slice(&vec);
+
+        Ok(IdentityKey(arr))
     }
 }
 
@@ -81,25 +98,43 @@ impl fmt::Debug for IdentityKey {
 //Service Enum
 #[derive(Debug, Clone, Copy)]
 pub enum Services {
-    None,
+    Unknown,
     Network,
     Bloom,
     FullNode,
-    RequiredServices,
-    LocalServices,
+    // RequiredServices,
+    // LocalServices,
+}
+
+impl TryFrom<u32> for Services {
+    type Error = error::Error;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        let service = match value {
+            0 => Services::Unknown,
+            NETWORK => Services::Network,
+            BLOOM => Services::Bloom,
+            FULL_NODE => Services::FullNode,
+            // REQUIRED_SERVICES =>, Services::RequiredServices,
+            // LOCAL_SERVICES =>
+            _ => return Err(error::Error::UnknownService),
+        };
+
+        Ok(service)
+    }
 }
 
 impl Services {
     pub fn value(&self) -> u32 {
         match *self {
-            Services::None => 0,
+            Services::Unknown => 0,
             //1
             Services::Network => NETWORK,
             //2
             Services::Bloom => BLOOM,
             Services::FullNode => FULL_NODE,
-            Services::RequiredServices => REQUIRED_SERVICES,
-            Services::LocalServices => LOCAL_SERVICES,
+            // Services::RequiredServices => REQUIRED_SERVICES,
+            // Services::LocalServices => LOCAL_SERVICES,
         }
     }
 }
