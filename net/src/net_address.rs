@@ -1,9 +1,11 @@
+use crate::error;
 use crate::types::{IdentityKey, Services};
-use chrono::{DateTime, Utc};
-use handshake_protocol::encoding::Encodable;
-use handshake_types::Buffer;
+// use crate::Result;
+use chrono::{DateTime, TimeZone, Utc};
+use extended_primitives::Buffer;
+use handshake_protocol::encoding::{Decodable, Encodable};
+use std::convert::TryFrom;
 use std::net::SocketAddr;
-use std::str::FromStr;
 
 //TODO I think tear down SocketAddr and store more raw
 #[derive(Clone, Debug, Copy)]
@@ -22,13 +24,13 @@ impl NetAddress {
             key,
             time: Utc::now(),
             //Init as none, can change later.
-            services: Services::None,
+            services: Services::Unknown,
         }
     }
 }
 
 impl Encodable for NetAddress {
-    fn size() -> u32 {
+    fn size(&self) -> u32 {
         88
     }
 
@@ -45,6 +47,43 @@ impl Encodable for NetAddress {
         buffer.write_bytes(&self.key);
 
         buffer
+    }
+}
+
+//TODO make this a self::Error
+impl Decodable for NetAddress {
+    type Error = error::Error;
+
+    fn decode(buf: Buffer) -> Result<NetAddress, Self::Error> {
+        //Don't like this -> See if we should just make our own time type that wraps this.
+        let timestamp = Utc.timestamp(buf.read_u64()? as i64, 0);
+        let services = Services::try_from(buf.read_u32()?)?;
+        let ip: String;
+
+        buf.read_u32()?;
+
+        if buf.read_u8()? == 0 {
+            ip = buf.read_string(16)?;
+            buf.seek(20);
+        } else {
+            //Ugly don't do this, but I don't see us ever hitting this loop.
+            ip = "0000000000000000".to_owned();
+            buf.seek(36);
+        }
+
+        let port = buf.read_u16()?;
+        //Convert this to read_fixed_bytes then we don't need to use try_from
+        let key = IdentityKey::try_from(buf.read_bytes(33)?)?;
+
+        let hostname = format!("{}:{}", ip, port);
+
+        Ok(NetAddress {
+            address: hostname.parse()?,
+            key,
+            time: timestamp,
+            // TODO from u32
+            services,
+        })
     }
 }
 
