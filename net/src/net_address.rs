@@ -5,7 +5,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use extended_primitives::Buffer;
 use handshake_protocol::encoding::{Decodable, Encodable};
 use std::convert::TryFrom;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 
 //TODO I think tear down SocketAddr and store more raw
 #[derive(Clone, Debug, Copy)]
@@ -40,7 +40,10 @@ impl Encodable for NetAddress {
         buffer.write_u32(self.services.bits());
         buffer.write_u32(0);
         buffer.write_u8(0);
-        buffer.write_string(self.address.ip().to_string());
+        match self.address.ip() {
+            IpAddr::V4(ip) => buffer.write_bytes(&ip.to_ipv6_mapped().octets()),
+            IpAddr::V6(ip) => buffer.write_bytes(&ip.octets()),
+        }
         buffer.fill(0, 20);
         buffer.write_u16(self.address.port());
         buffer.write_bytes(&self.key);
@@ -49,7 +52,6 @@ impl Encodable for NetAddress {
     }
 }
 
-//TODO make this a self::Error
 impl Decodable for NetAddress {
     type Error = error::Error;
 
@@ -63,11 +65,11 @@ impl Decodable for NetAddress {
 
         if buf.read_u8()? == 0 {
             ip = buf.read_string(16)?;
-            buf.seek(20);
+            buf.seek(20)?;
         } else {
             //Ugly don't do this, but I don't see us ever hitting this loop.
             ip = "0000000000000000".to_owned();
-            buf.seek(36);
+            buf.seek(36)?;
         }
 
         let port = buf.read_u16()?;
@@ -94,3 +96,17 @@ impl Decodable for NetAddress {
 //TODO from string for PeerAddr
 //
 //TODO make net it's own package in fact, let's make everything it's own package.
+//
+
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_net_address_encoding() {
+        let hostname = "127.0.0.1:8333";
+        let key = IdentityKey::from([0; 33]);
+
+        let mut addr = NetAddress::new(hostname.parse().unwrap(), key);
+    }
+
+}
