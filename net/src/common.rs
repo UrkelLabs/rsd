@@ -31,18 +31,3 @@ pub const MAX_TX_REQUEST: u32 = 10_000;
 
 ///Maximum number of claim requests
 pub const MAX_CLAIM_REQUEST: u32 = 1_000;
-
-/// Service constant for Network capabilities (1 << 0)
-pub const NETWORK: u32 = 1;
-
-///Service constant for Bloom Filter capabilities
-pub const BLOOM: u32 = (1 << 1);
-
-///Service definition for a full node - (1)
-pub const FULL_NODE: u32 = NETWORK;
-
-///Service definition required to communicate - (1)
-pub const REQUIRED_SERVICES: u32 = NETWORK;
-
-///Service definition for rsd - (1)
-pub const LOCAL_SERVICES: u32 = NETWORK;

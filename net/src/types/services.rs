@@ -1,7 +1,3 @@
-use crate::common::{BLOOM, FULL_NODE, NETWORK};
-use crate::error;
-use std::convert::TryFrom;
-
 use bitflags::bitflags;
 
 bitflags! {

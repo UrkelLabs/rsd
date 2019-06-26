@@ -17,14 +17,13 @@ pub struct NetAddress {
 }
 
 impl NetAddress {
-    //TODO probably include services in the new function, instead of setting it to 0.
     pub fn new(addr: SocketAddr, key: IdentityKey) -> Self {
         NetAddress {
             address: addr,
             key,
             time: Utc::now(),
             //Init as none, can change later.
-            services: Services::Unknown,
+            services: Services::UNKNOWN,
         }
     }
 }
@@ -38,7 +37,7 @@ impl Encodable for NetAddress {
         let mut buffer = Buffer::new();
 
         buffer.write_u64(self.time.timestamp() as u64);
-        buffer.write_u32(self.services.value());
+        buffer.write_u32(self.services.bits());
         buffer.write_u32(0);
         buffer.write_u8(0);
         buffer.write_string(self.address.ip().to_string());
@@ -54,10 +53,10 @@ impl Encodable for NetAddress {
 impl Decodable for NetAddress {
     type Error = error::Error;
 
-    fn decode(buf: Buffer) -> Result<NetAddress, Self::Error> {
+    fn decode(mut buf: Buffer) -> Result<NetAddress, Self::Error> {
         //Don't like this -> See if we should just make our own time type that wraps this.
         let timestamp = Utc.timestamp(buf.read_u64()? as i64, 0);
-        let services = Services::try_from(buf.read_u32()?)?;
+        let services = Services::from_bits_truncate(buf.read_u32()?);
         let ip: String;
 
         buf.read_u32()?;
@@ -81,7 +80,6 @@ impl Decodable for NetAddress {
             address: hostname.parse()?,
             key,
             time: timestamp,
-            // TODO from u32
             services,
         })
     }
