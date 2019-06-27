@@ -56,7 +56,7 @@ impl Encodable for NetAddress {
 impl Decodable for NetAddress {
     type Error = error::Error;
 
-    fn decode(mut buf: Buffer) -> Result<NetAddress, Self::Error> {
+    fn decode(buf: &mut Buffer) -> Result<NetAddress, Self::Error> {
         //Don't like this -> See if we should just make our own time type that wraps this.
         let timestamp = Utc.timestamp(buf.read_u64()? as i64, 0);
         let services = Services::from_bits_truncate(buf.read_u32()?);
@@ -125,7 +125,7 @@ mod test {
 
         let addr = NetAddress::new(hostname.parse().unwrap(), key);
 
-        let addr2 = NetAddress::decode(addr.encode()).unwrap();
+        let addr2 = NetAddress::decode(&mut addr.encode()).unwrap();
 
         assert_eq!(addr, addr2);
     }
