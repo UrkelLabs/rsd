@@ -21,3 +21,9 @@ impl From<ProtocolVersion> for u32 {
         v.0
     }
 }
+
+impl From<u32> for ProtocolVersion {
+    fn from(v: u32) -> Self {
+        ProtocolVersion(v)
+    }
+}

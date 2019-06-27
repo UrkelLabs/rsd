@@ -45,6 +45,15 @@ impl ops::Deref for IdentityKey {
     }
 }
 
+//Remove this when const generics exist.
+//TODO review this impl, not sure if it's correct, but essentially PartialEq is impl on slices,
+//so we just convert the internal array to a slice and then compare.
+impl PartialEq for IdentityKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.as_ref() == other.0.as_ref()
+    }
+}
+
 impl AsRef<[u8]> for IdentityKey {
     fn as_ref(&self) -> &[u8] {
         &self.0
