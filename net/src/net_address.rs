@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 use std::net::{IpAddr, SocketAddr};
 
 //TODO I think tear down SocketAddr and store more raw
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq)]
 pub struct NetAddress {
     pub address: SocketAddr,
     pub services: Services,
@@ -21,7 +21,8 @@ impl NetAddress {
         NetAddress {
             address: addr,
             key,
-            time: Utc::now(),
+            //Wrap time into our own type because this will become troublesome. TODO
+            time: Utc.timestamp(Utc::now().timestamp(), 0),
             //Init as none, can change later.
             services: Services::UNKNOWN,
         }
@@ -59,16 +60,19 @@ impl Decodable for NetAddress {
         //Don't like this -> See if we should just make our own time type that wraps this.
         let timestamp = Utc.timestamp(buf.read_u64()? as i64, 0);
         let services = Services::from_bits_truncate(buf.read_u32()?);
-        let ip: String;
+        let mut ip_bytes = [0; 16];
 
         buf.read_u32()?;
 
         if buf.read_u8()? == 0 {
-            ip = buf.read_string(16)?;
+            //Make this read_exact_bytes TODO
+            let bytes = buf.read_bytes(16)?;
+            ip_bytes.copy_from_slice(&bytes);
             buf.seek(20)?;
         } else {
             //Ugly don't do this, but I don't see us ever hitting this loop.
-            ip = "0000000000000000".to_owned();
+            // ip = "0000000000000000".to_owned();
+            ip_bytes = [0; 16];
             buf.seek(36)?;
         }
 
@@ -76,10 +80,23 @@ impl Decodable for NetAddress {
         //Convert this to read_fixed_bytes then we don't need to use try_from
         let key = IdentityKey::try_from(buf.read_bytes(33)?)?;
 
-        let hostname = format!("{}:{}", ip, port);
+        let ip = IpAddr::from(ip_bytes);
+        let is_v4 = match ip {
+            IpAddr::V4(ip) => Some(ip),
+            IpAddr::V6(ip) => ip.to_ipv4(),
+        };
+
+        let hostname: SocketAddr;
+
+        if let Some(ipv4) = is_v4 {
+            let addr = IpAddr::from(ipv4);
+            hostname = SocketAddr::new(addr, port);
+        } else {
+            hostname = SocketAddr::new(ip, port);
+        }
 
         Ok(NetAddress {
-            address: hostname.parse()?,
+            address: hostname,
             key,
             time: timestamp,
             services,
@@ -100,6 +117,18 @@ impl Decodable for NetAddress {
 
 mod test {
     use super::*;
+
+    #[test]
+    fn test_net_address_encode_and_decode() {
+        let hostname = "127.0.0.1:8333";
+        let key = IdentityKey::from([0; 33]);
+
+        let addr = NetAddress::new(hostname.parse().unwrap(), key);
+
+        let addr2 = NetAddress::decode(addr.encode()).unwrap();
+
+        assert_eq!(addr, addr2);
+    }
 
     #[test]
     fn test_net_address_encoding() {
