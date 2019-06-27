@@ -107,6 +107,10 @@ mod test {
         let key = IdentityKey::from([0; 33]);
 
         let mut addr = NetAddress::new(hostname.parse().unwrap(), key);
+        addr.time = Utc.timestamp(1231006505, 0);
+        addr.services = Services::NETWORK;
+
+        assert_eq!(addr.encode().into_hex(), "29ab5f490000000001000000000000000000000000000000000000ffff7f00000100000000000000000000000000000000000000008d20000000000000000000000000000000000000000000000000000000000000000000");
     }
 
 }
