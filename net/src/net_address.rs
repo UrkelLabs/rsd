@@ -6,6 +6,7 @@ use extended_primitives::Buffer;
 use handshake_protocol::encoding::{Decodable, Encodable};
 use std::convert::TryFrom;
 use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 
 //TODO I think tear down SocketAddr and store more raw
 #[derive(Clone, Debug, Copy, PartialEq)]
@@ -104,15 +105,32 @@ impl Decodable for NetAddress {
     }
 }
 
-// impl FromStr for NetAddress {
+impl FromStr for NetAddress {
+    type Err = error::Error;
 
-// }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let pieces: Vec<&str> = s.split('@').collect();
+
+        if pieces.len() != 2 {
+            return Err(error::Error::InvalidIdentityKey);
+        }
+
+        let key: IdentityKey = pieces[0].parse()?;
+
+        let address: SocketAddr = pieces[1].parse()?;
+
+        Ok(NetAddress {
+            address,
+            key,
+            time: Utc.timestamp(Utc::now().timestamp(), 0),
+            services: Services::UNKNOWN,
+        })
+    }
+}
 
 //PeerAddr impl ToString
 //add default -> Include default services in there.
 //TODO from string for PeerAddr
-//
-//TODO make net it's own package in fact, let's make everything it's own package.
 //
 
 mod test {
@@ -126,6 +144,8 @@ mod test {
         let addr = NetAddress::new(hostname.parse().unwrap(), key);
 
         let addr2 = NetAddress::decode(&mut addr.encode()).unwrap();
+
+        dbg!(addr);
 
         assert_eq!(addr, addr2);
     }
