@@ -14,6 +14,7 @@ pub enum Error {
     Hex(hex::FromHexError),
     Base32,
     InvalidIdentityKey,
+    InvalidNetAddress,
 }
 
 impl From<brontide::Error> for Error {
@@ -56,6 +57,7 @@ impl fmt::Display for Error {
             Error::Hex(ref e) => write!(f, "Hex error: {}", e),
             Error::Base32 => write!(f, "Base32 error"),
             Error::InvalidIdentityKey => write!(f, "Invalid Identity Key"),
+            Error::InvalidNetAddress => write!(f, "Invalid Network Address"),
         }
     }
 }
