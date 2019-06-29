@@ -8,9 +8,11 @@ use handshake_protocol::encoding::{Decodable, Encodable};
 use handshake_protocol::network::Network;
 use rand::Rng;
 
+#[derive(Debug)]
 pub enum Packet {
     Version(VersionPacket),
     Verack,
+    Ping,
 }
 
 impl Packet {
@@ -29,11 +31,12 @@ impl Packet {
     pub fn decode(packet: Buffer) -> Result<Self> {
         let (raw_packet, packet_type) = Packet::parse(packet)?;
         match packet_type {
-            1 => {
+            0 => {
                 let packet = VersionPacket::decode(raw_packet)?;
                 Ok(Packet::Version(packet))
             }
-            _ => Ok(Packet::Verack),
+            1 => Ok(Packet::Verack),
+            _ => Ok(Packet::Ping),
         }
     }
 }
