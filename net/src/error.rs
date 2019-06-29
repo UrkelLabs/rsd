@@ -15,6 +15,7 @@ pub enum Error {
     Base32,
     InvalidIdentityKey,
     InvalidNetAddress,
+    DuplicateVersion,
 }
 
 impl From<brontide::Error> for Error {
@@ -58,6 +59,7 @@ impl fmt::Display for Error {
             Error::Base32 => write!(f, "Base32 error"),
             Error::InvalidIdentityKey => write!(f, "Invalid Identity Key"),
             Error::InvalidNetAddress => write!(f, "Invalid Network Address"),
+            Error::DuplicateVersion => write!(f, "Peer sent a duplicate version."),
         }
     }
 }
