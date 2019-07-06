@@ -8,9 +8,15 @@ edition = "2018"
 chrono = "0.4.0"
 base32 = "0.4.0"
 hex = "0.3.2"
-brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
+bitflags = "1.1.0"
+# brontide = { git="https://github.com/handshakealliance/rust-brontide", features = ["stream"]}
+brontide = { path="../../rust-brontide", features = ["stream"]}
 romio = "0.3.0-alpha.8"
 handshake_types = { path="../types" }
 handshake_protocol = { path="../protocol" }
+extended-primitives = { path="../../../UrkelLabs/extended-primitives" }
 #Remove this and move to dev, if we don't use async/await in the net lib. Otherwise make this optional like we do w/ brontide
 futures-preview = {version="=0.3.0-alpha.16", features = ["async-await", "nightly"] }
+rand = "0.7"
+log = "0.4"
+fasthash = "0.4"
