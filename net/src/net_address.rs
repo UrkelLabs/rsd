@@ -9,7 +9,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 
 //TODO I think tear down SocketAddr and store more raw
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy)]
 pub struct NetAddress {
     pub address: SocketAddr,
     pub services: Services,
@@ -28,7 +28,52 @@ impl NetAddress {
             services: Services::UNKNOWN,
         }
     }
+
+    //Return the unqiue key that represents this network address
+    pub fn get_unique_key(&self) -> [u8; 18] {
+        //TODO do we include some reference to the identity key here?
+        let key = [0_u8; 18];
+
+        key.copy_from_slice(self.address.ip());
+        key[16] = self.address.port() / 0x100; // most significant byte of our port
+        key[17] = self.address.port() / 0x0FF; // least significant byte of our port
+
+        key
+    }
 }
+
+//TODO we have to decide if we want to make Peers unique on
+//identity keys + ip or if we just want to use ip.
+impl std::hash::Hash for NetAddress {
+    /// If loopback address then we care about ip and port.
+    /// If regular address then we only care about the ip and ignore the port.
+
+    //TODO decide if we want to hash by key or not.
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        if self.address.ip().is_loopback() {
+            //Hashes ip + port
+            self.address.hash(state);
+        } else {
+            //Hashes only ip
+            self.address.ip().hash(state);
+        }
+    }
+}
+
+//TODO also decide if this uses key or not.
+impl PartialEq for NetAddress {
+    /// If loopback address then we care about ip and port.
+    /// If regular address then we only care about the ip and ignore the port.
+    fn eq(&self, other: &NetAddress) -> bool {
+        if self.address.ip().is_loopback() {
+            self.address == other.address
+        } else {
+            self.address.ip() == other.address.ip()
+        }
+    }
+}
+
+impl Eq for NetAddress {}
 
 impl Encodable for NetAddress {
     fn size(&self) -> u32 {
