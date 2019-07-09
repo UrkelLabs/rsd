@@ -1,18 +1,19 @@
-#[derive(Copy, Clone, Debug)]
+use std::net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr};
+use std::str::FromStr;
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RawIP([u8; 16]);
 
-//TODO figure out how best to expose this/if we want to at all
-//If we can not expose this, I think that's the best.
-pub enum IPNetwork {
-    None = 0,
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum Network {
+    Unroutable = 0,
     Inet4 = 1,
     Inet6 = 2,
     Onion = 3,
-    Teredo = 4
+    Teredo = 4,
 }
 
 impl RawIP {
-
     pub fn is_null(&self) -> bool {
         if self.is_IPv4() {
             // 0.0.0.0
@@ -167,13 +168,13 @@ impl RawIP {
     /// Tests whether the IP is RFC4193 (IPv6 Unique Local Addresses) https://tools.ietf.org/html/rfc4193
     pub fn is_RFC4193(&self) -> bool {
         // FC00::/7
-        self.0[0] & 0xFE) == 0xFC
+        (self.0[0] & 0xFE) == 0xFC
     }
 
     /// Tests whether the IP is RFC6145 (IPv6 IPv4-Translated Address) https://tools.ietf.org/html/rfc6145
     pub fn is_RFC6145(&self) -> bool {
         // ::FFFF:0:0:0/96
-        has_prefix(vec![0,0,0,0,0,0,0,0,0xFF,0xFF,0,0], self.0)
+        has_prefix(vec![0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0, 0], self.0)
     }
 
     /// Tests whether the IP is RFC4843 (deprecated) (IPv6 Prefix for ORCHID) https://tools.ietf.org/html/rfc4843
@@ -190,23 +191,22 @@ impl RawIP {
 
     /// Test whether the IP is local
     pub fn is_local(&self) -> bool {
-
         // IPv4 loopback (127.0.0.0/8 or 0.0.0.0/8)
         if self.is_IPv4() && (self.0[12] == 127 || self.0[13] == 0) {
             return true;
         }
 
-          // IPv6 loopback (::1/128)
+        // IPv6 loopback (::1/128)
         if self.0 == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] {
             return true;
         }
 
-        false;
+        false
     }
 
-    //TODO
+    //Test whether the IP is an onion address
     pub fn is_onion(&self) -> bool {
-        unimplement!()
+        has_prefix(vec![0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43], self.0)
     }
 
     /// Test whether the IP is valid
@@ -233,40 +233,53 @@ impl RawIP {
     }
 
     pub fn is_routable(&self) -> bool {
-        return self.is_valid() && !(self.is_RFC1918()
-            || self.is_RFC2544()
-            || self.is_RFC3927()
-            || self.is_RFC4862()
-            || self.is_RFC6598()
-            || self.is_RFC5737()
-            || (self.is_RFC4193() && !self.is_Onion())
-            || self.is_RFC4843()
-            || self.is_RFC7343()
-            || self.is_Local()
+        self.is_valid()
+            && !(self.is_RFC1918()
+                || self.is_RFC2544()
+                || self.is_RFC3927()
+                || self.is_RFC4862()
+                || self.is_RFC6598()
+                || self.is_RFC5737()
+                || (self.is_RFC4193() && !self.is_onion())
+                || self.is_RFC4843()
+                || self.is_RFC7343()
+                || self.is_local())
     }
 
-    //TODO add unroutable?
-    pub fn get_network(&self) -> IPNetwork {
+    fn get_network(&self) -> Network {
+        if !self.is_routable() {
+            return Network::Unroutable;
+        }
+
         if self.is_IPv4() {
-            return IPNetwork::Inet4;
+            return Network::Inet4;
         }
 
         if self.is_RFC4380() {
-            return IPNetwork::Teredo;
+            return Network::Teredo;
         }
 
-        if self.is_Onion() {
-            return IPNetwork::Onion;
+        if self.is_onion() {
+            return Network::Onion;
         }
 
-        IPNetwork::Inet6
+        Network::Inet6
     }
 
     // TODO
-    pub fn get_reachability(&self) {
-        unimplemented!()
-    }
+    // pub fn get_reachability(&self) {
+    //     unimplemented!()
+    // }
 
+    pub fn get_ipaddr(&self) -> IpAddr {
+        if self.is_IPv4() {
+            IpAddr::V4(Ipv4Addr::new(
+                self.0[15], self.0[14], self.0[13], self.0[12],
+            ))
+        } else {
+            IpAddr::V6(Ipv6Addr::from(self.0))
+        }
+    }
 }
 
 //Helper function
@@ -283,10 +296,56 @@ fn has_prefix(prefix: Vec<u8>, ip: [u8; 16]) -> bool {
 
     true
 }
-//TODO implement return SocketAddr
-//TODO implement from string
-//TODO implement to string
-//TODO implement Eqs, Partial Eq
+
+impl From<IpAddr> for RawIP {
+    fn from(ip: IpAddr) -> Self {
+        match ip {
+            IpAddr::V4(ip) => RawIP::from(ip.octets()),
+            IpAddr::V6(ip) => RawIP(ip.octets()),
+        }
+    }
+}
+
+impl From<[u8; 4]> for RawIP {
+    fn from(ip: [u8; 4]) -> Self {
+        RawIP([
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, ip[0], ip[1], ip[2], ip[3],
+        ])
+    }
+}
+
+impl FromStr for RawIP {
+    type Err = AddrParseError;
+
+    fn from_str(s: &str) -> Result<RawIP, AddrParseError> {
+        // Cheat and use Rust's built in parser.
+        let ip: IpAddr = s.parse()?;
+        Ok(RawIP::from(ip))
+    }
+}
+
+// impl Display for RawIP {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_network() {
+        let ip: RawIP = "127.0.0.1".parse().unwrap();
+        assert_eq!(ip.get_network(), Network::Unroutable);
+        let ip: RawIP = "::1".parse().unwrap();
+        assert_eq!(ip.get_network(), Network::Unroutable);
+        let ip: RawIP = "8.8.8.8".parse().unwrap();
+        assert_eq!(ip.get_network(), Network::Inet4);
+        let ip: RawIP = "2001::8888".parse().unwrap();
+        assert_eq!(ip.get_network(), Network::Teredo);
+        let ip: RawIP = "FD87:D87E:EB43:edb1:8e4:3588:e546:35ca".parse().unwrap();
+        assert_eq!(ip.get_network(), Network::Onion);
+    }
+
+}
+
+//TODO implement Display
 //TODO implement deref.
 //TODO implement custom Debug.
-//TODO implement froms for SocketAddr
