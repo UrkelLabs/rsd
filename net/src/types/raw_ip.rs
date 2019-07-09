@@ -1,7 +1,34 @@
 #[derive(Copy, Clone, Debug)]
 pub struct RawIP([u8; 16]);
 
+//TODO figure out how best to expose this/if we want to at all
+//If we can not expose this, I think that's the best.
+pub enum IPNetwork {
+    None = 0,
+    Inet4 = 1,
+    Inet6 = 2,
+    Onion = 3,
+    Teredo = 4
+}
+
 impl RawIP {
+
+    pub fn is_null(&self) -> bool {
+        if self.is_IPv4() {
+            // 0.0.0.0
+            return self.0[12] == 0 && self.0[13] == 0 && self.0[14] == 0 && self.0[15] == 0;
+        }
+        self.0 == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+
+    pub fn is_broadcast(&self) -> bool {
+        if !self.is_IPv4() {
+            return false;
+        }
+
+        self.0[12] == 255 && self.0[13] == 255 && self.0[14] == 255 && self.0[15] == 255
+    }
+
     pub fn is_IPv4(&self) -> bool {
         (self.0[0] == 0
             && self.0[1] == 0
@@ -160,6 +187,86 @@ impl RawIP {
         // 2001:20::/28
         self.0[0] == 0x20 && self.0[1] == 0x01 && self.0[2] == 0x00 && (self.0[3] & 0xF0) == 0x20
     }
+
+    /// Test whether the IP is local
+    pub fn is_local(&self) -> bool {
+
+        // IPv4 loopback (127.0.0.0/8 or 0.0.0.0/8)
+        if self.is_IPv4() && (self.0[12] == 127 || self.0[13] == 0) {
+            return true;
+        }
+
+          // IPv6 loopback (::1/128)
+        if self.0 == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] {
+            return true;
+        }
+
+        false;
+    }
+
+    //TODO
+    pub fn is_onion(&self) -> bool {
+        unimplement!()
+    }
+
+    /// Test whether the IP is valid
+    pub fn is_valid(&self) -> bool {
+        //Only triggers in Bitcoin Versions 0.2.9 - Not needed for Handshake, but this code will
+        //likely make it into Bitcoin code so we should keep.
+        // if has_prefix(vec![00, 00, 00, 00, 00, 00, 00, ff, ff], self.0) {
+        //     return false;
+        // }
+
+        if self.is_null() {
+            return false;
+        }
+
+        if self.is_broadcast() {
+            return false;
+        }
+
+        if self.is_RFC3849() {
+            return false;
+        }
+
+        true
+    }
+
+    pub fn is_routable(&self) -> bool {
+        return self.is_valid() && !(self.is_RFC1918()
+            || self.is_RFC2544()
+            || self.is_RFC3927()
+            || self.is_RFC4862()
+            || self.is_RFC6598()
+            || self.is_RFC5737()
+            || (self.is_RFC4193() && !self.is_Onion())
+            || self.is_RFC4843()
+            || self.is_RFC7343()
+            || self.is_Local()
+    }
+
+    //TODO add unroutable?
+    pub fn get_network(&self) -> IPNetwork {
+        if self.is_IPv4() {
+            return IPNetwork::Inet4;
+        }
+
+        if self.is_RFC4380() {
+            return IPNetwork::Teredo;
+        }
+
+        if self.is_Onion() {
+            return IPNetwork::Onion;
+        }
+
+        IPNetwork::Inet6
+    }
+
+    // TODO
+    pub fn get_reachability(&self) {
+        unimplemented!()
+    }
+
 }
 
 //Helper function
@@ -176,10 +283,10 @@ fn has_prefix(prefix: Vec<u8>, ip: [u8; 16]) -> bool {
 
     true
 }
-//TODO implement all of the is rfc functions here.
 //TODO implement return SocketAddr
 //TODO implement from string
 //TODO implement to string
-//
+//TODO implement Eqs, Partial Eq
+//TODO implement deref.
 //TODO implement custom Debug.
 //TODO implement froms for SocketAddr
