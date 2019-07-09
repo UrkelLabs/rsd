@@ -1,5 +1,5 @@
 use std::net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr};
-use std::str::FromStr;
+use std::ops::Deref;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RawIP([u8; 16]);
@@ -43,6 +43,11 @@ impl RawIP {
             && self.0[9] == 0
             && self.0[10] == 0xff
             && self.0[11] == 0xff)
+    }
+
+    /// Tests whether the IP is IPv6
+    pub fn is_ipv6(&self) -> bool {
+        !self.is_ipv4() && !self.is_onion()
     }
 
     ///Tests whether the IP is RFC1918 (Private internet) https://tools.ietf.org/html/rfc1918
@@ -320,7 +325,7 @@ impl From<[u8; 16]> for RawIP {
     }
 }
 
-impl FromStr for RawIP {
+impl std::str::FromStr for RawIP {
     type Err = AddrParseError;
 
     fn from_str(s: &str) -> Result<RawIP, AddrParseError> {
@@ -330,11 +335,20 @@ impl FromStr for RawIP {
     }
 }
 
+impl Deref for RawIP {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 // impl Display for RawIP {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Network, RawIP};
+    use std::str::FromStr;
 
     #[test]
     fn test_get_network() {
@@ -350,10 +364,75 @@ mod tests {
         assert_eq!(ip.get_network(), Network::Onion);
     }
 
-    //TODO network score.
-    //Reachability Score
+    #[test]
+    fn test_rfcs() {
+        let ip: RawIP = "127.0.0.1".parse().unwrap();
+        assert!(ip.is_ipv4());
+
+        let ip: RawIP = "::FFFF:192.168.1.1".parse().unwrap();
+        assert!(ip.is_ipv4());
+
+        let ip: RawIP = "::1".parse().unwrap();
+        assert!(ip.is_ipv6());
+
+        let ip: RawIP = "10.0.0.1".parse().unwrap();
+        assert!(ip.is_rfc1918());
+
+        let ip: RawIP = "192.168.1.1".parse().unwrap();
+        assert!(ip.is_rfc1918());
+
+        let ip: RawIP = "172.31.255.255".parse().unwrap();
+        assert!(ip.is_rfc1918());
+
+        let ip: RawIP = "2001:0DB8::".parse().unwrap();
+        assert!(ip.is_rfc3849());
+
+        let ip: RawIP = "169.254.1.1".parse().unwrap();
+        assert!(ip.is_rfc3927());
+
+        let ip: RawIP = "2002::1".parse().unwrap();
+        assert!(ip.is_rfc3964());
+
+        let ip: RawIP = "FC00::".parse().unwrap();
+        assert!(ip.is_rfc4193());
+
+        let ip: RawIP = "2001::2".parse().unwrap();
+        assert!(ip.is_rfc4380());
+
+        let ip: RawIP = "2001:10::".parse().unwrap();
+        assert!(ip.is_rfc4843());
+
+        let ip: RawIP = "2001:20::".parse().unwrap();
+        assert!(ip.is_rfc7343());
+
+        let ip: RawIP = "FE80::".parse().unwrap();
+        assert!(ip.is_rfc4862());
+
+        let ip: RawIP = "64:FF9B::".parse().unwrap();
+        assert!(ip.is_rfc6052());
+
+        let ip: RawIP = "FD87:D87E:EB43:edb1:8e4:3588:e546:35ca".parse().unwrap();
+        assert!(ip.is_onion());
+
+        let ip: RawIP = "127.0.0.1".parse().unwrap();
+        assert!(ip.is_local());
+
+        let ip: RawIP = "::1".parse().unwrap();
+        assert!(ip.is_local());
+
+        let ip: RawIP = "8.8.8.8".parse().unwrap();
+        assert!(ip.is_routable());
+
+        let ip: RawIP = "2001::1".parse().unwrap();
+        assert!(ip.is_routable());
+
+        let ip: RawIP = "127.0.0.1".parse().unwrap();
+        assert!(ip.is_valid());
+    }
+
+    //TODO reachability score .
 }
 
 //TODO implement Display
-//TODO implement deref.
 //TODO implement custom Debug.
+//TODO HASH impl
