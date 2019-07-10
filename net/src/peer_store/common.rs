@@ -17,13 +17,13 @@ pub(crate) const NEW_BUCKETS_PER_SOURCE_GROUP: u32 = 64;
 const NEW_BUCKETS_PER_ADDRESS: u32 = 8;
 
 // how old addresses can maximally be
-const HORIZON_DAYS: u32 = 30;
+pub(crate) const HORIZON_DAYS: u32 = 30;
 
 // after how many failed attempts we give up on a new node
-const RETRIES: u32 = 3;
+pub(crate) const RETRIES: u32 = 3;
 
 // how many successive failures are allowed ...
-const MAX_FAILURES: u32 = 10;
+pub(crate) const MAX_FAILURES: u32 = 10;
 
 // ... in at least this many days
 pub(crate) const MIN_FAIL_DAYS: u32 = 7;
