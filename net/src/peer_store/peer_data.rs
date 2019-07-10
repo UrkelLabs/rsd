@@ -1,21 +1,21 @@
 use crate::peer_store::common::{
-    BUCKET_SIZE, MIN_FAIL_DAYS, NEW_BUCKETS_PER_SOURCE_GROUP, NEW_BUCKET_COUNT,
-    TRIED_BUCKETS_PER_GROUP, TRIED_BUCKET_COUNT,
+    BUCKET_SIZE, HORIZON_DAYS, MAX_FAILURES, MIN_FAIL_DAYS, NEW_BUCKETS_PER_SOURCE_GROUP,
+    NEW_BUCKET_COUNT, RETRIES, TRIED_BUCKETS_PER_GROUP, TRIED_BUCKET_COUNT,
 };
 use crate::NetAddress;
-use chrono::{DateTime, Duration, Utc};
 use extended_primitives::{uint256::Uint256, Buffer};
 use fasthash::murmur3;
+use handshake_types::Time;
 
 pub struct PeerData {
     //Possibly change these to u64, but Datetime should work as well
     //Let's change this to the internal time type though.
-    pub last_counted_try: DateTime<Utc>,
-    pub last_try: DateTime<Utc>,
+    pub last_counted_try: Time,
+    pub last_try: Time,
     pub address: NetAddress,
 
     source: NetAddress,
-    last_success: DateTime<Utc>,
+    last_success: Time,
     attempts: u32,
     ref_count: u32,
     in_tried: bool,
@@ -94,30 +94,32 @@ impl PeerData {
     //TODO I think this should take a time in.
     //Possibly take in adjusted time.
     pub fn is_terrible(&self) -> bool {
-        let now = Utc::now();
+        let now = Time::now();
         // never remove things tried in the last minute
-        // Check that last_try is not null AND last try is less than 1 min ago
-        // Switch to this when we use custom date time.
-        // I don't think this works, but worth a shot
-        if (self.last_try >= now - Duration::seconds(60)) {
+        if self.last_try != 0 && self.last_try >= now - 60 {
             return false;
         }
 
-        if self.address.time > now + Duration::seconds(600) {
+        //If the address came too far into the future, it is terrible
+        if self.address.time > now + 600 {
             return true;
         }
 
-        //If self.address.time is null
-        if self.address.time == 0 || now - self.address.time > Duration::days(HORIZON_DAYS) {
+        // Address not seen in recent history (beyond the horizaon days)
+        if self.address.time == 0
+            || (now - self.address.time) > (HORIZON_DAYS * 24 * 60 * 60) as u64
+        {
             return true;
         }
 
-        //Isn't null
+        //Tried more than the RETRIES number, and still hasn't be successful
         if self.last_success == 0 && self.attempts >= RETRIES {
             return true;
         }
 
-        if now - self.last_success > Duration::days(MIN_FAIL_DAYS) && self.attempts >= MAX_FAILURES
+        //Hit the max number of failures in the last MIN_FAIL_DAYS
+        if (now - self.last_success) > (MIN_FAIL_DAYS * 24 * 60 * 60) as u64
+            && self.attempts >= MAX_FAILURES
         {
             return true;
         }
@@ -127,7 +129,7 @@ impl PeerData {
 
     pub fn get_chance(&self) -> f64 {
         let mut chance = 1.0;
-        let since_last_try = std::cmp::max(Utc::now().timestamp() - self.last_try.timestamp(), 0);
+        let since_last_try = std::cmp::max(Time::now() - self.last_try, Time::new());
 
         if since_last_try < 60 * 10 {
             chance *= 0.01;
