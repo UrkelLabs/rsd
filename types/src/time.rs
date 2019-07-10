@@ -1,8 +1,9 @@
 use chrono::{DateTime, Utc};
+use std::cmp;
 use std::ops;
 
 //TODO I think Eq impls Partial Eq and for Ord same thing. remoe if so.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Debug, Clone, Default)]
+#[derive(Copy, Debug, Clone, Default)]
 pub struct Time(u64);
 
 //Time in Seconds
@@ -28,40 +29,52 @@ impl From<u64> for Time {
 }
 
 //Operators
-//These can probably all be combined with generics and FROM traits.
-//Add<T: Into<Time>>
-impl ops::Add for Time {
+impl<T> ops::Add<T> for Time
+where
+    T: Into<Time>,
+{
     type Output = Self;
 
-    fn add(self, other: Self) -> Self {
-        Self(self.0 + other.0)
+    fn add(self, other: T) -> Self {
+        Self(self.0 + other.into().0)
     }
 }
 
-impl ops::Add<u64> for Time {
+impl<T> ops::Sub<T> for Time
+where
+    T: Into<Time>,
+{
     type Output = Self;
 
-    fn add(self, other: u64) -> Self {
-        Self(self.0 + other)
+    fn sub(self, other: T) -> Self {
+        Self(self.0 - other.into().0)
     }
 }
 
-impl ops::Sub for Time {
-    type Output = Self;
+//Comparisons
 
-    fn sub(self, other: Self) -> Self {
-        Self(self.0 - other.0)
+impl cmp::PartialEq<u64> for Time {
+    fn eq(&self, other: &u64) -> bool {
+        &self.0 == other
     }
 }
 
-impl ops::Sub<u64> for Time {
-    type Output = Self;
-
-    fn sub(self, other: u64) -> Self {
-        Self(self.0 - other)
+impl cmp::PartialEq for Time {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 
-//TODO make sure we can do add, minus, etc
+impl cmp::PartialOrd<u64> for Time {
+    fn partial_cmp(&self, other: &u64) -> Option<cmp::Ordering> {
+        Some(self.0.cmp(other))
+    }
+}
+
+impl cmp::PartialOrd for Time {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.0.cmp(&other.0))
+    }
+}
 
 //TODO impl From Datetime, SystemTime, Duration, and u64
