@@ -1,7 +1,7 @@
 use std::net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Deref;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct RawIP([u8; 16]);
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -343,7 +343,76 @@ impl Deref for RawIP {
     }
 }
 
-// impl Display for RawIP {}
+impl std::fmt::Display for RawIP {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.is_onion() {
+            // write!(f, "{}.onion", self.0);
+            return Ok(());
+        }
+
+        if self.is_ipv4() {
+            return write!(
+                f,
+                "{}.{}.{}.{}",
+                //TODO double check order here
+                self.0[12],
+                self.0[13],
+                self.0[14],
+                self.0[15]
+            );
+        };
+
+        //Hack - use hex package?
+        if self.is_ipv6() {
+            return write!(
+                f,
+                "{:02X?}{:02X?}:{:02X?}{:02X?}:{:02X?}{:02X?}:{:02X?}{:02X?}:{:02X?}{:02X?}:{:02X?}{:02X?}:{:02X?}{:02X?}:{:02X?}{:02X?}",
+                self.0[0],
+                self.0[1],
+                self.0[2],
+                self.0[3],
+                self.0[4],
+                self.0[5],
+                self.0[6],
+                self.0[7],
+                self.0[8],
+                self.0[9],
+                self.0[10],
+                self.0[11],
+                self.0[12],
+                self.0[13],
+                self.0[14],
+                self.0[15],
+            );
+        };
+
+        Ok(())
+    }
+}
+
+impl std::fmt::Debug for RawIP {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+// if (IsTor())
+//         return EncodeBase32(&ip[6], 10) + ".onion";
+//     CService serv(*this, 0);
+//     struct sockaddr_storage sockaddr;
+//     socklen_t socklen = sizeof(sockaddr);
+//     if (serv.GetSockAddr((struct sockaddr*)&sockaddr, &socklen)) {
+//         char name[1025] = "";
+//         if (!getnameinfo((const struct sockaddr*)&sockaddr, socklen, name, sizeof(name), nullptr, 0, NI_NUMERICHOST))
+//             return std::string(name);
+//     }
+//     if (IsIPv4())
+//         return strprintf("%u.%u.%u.%u", GetByte(3), GetByte(2), GetByte(1), GetByte(0));
+//     else
+//         return strprintf("%x:%x:%x:%x:%x:%x:%x:%x",
+//                          GetByte(15) << 8 | GetByte(14), GetByte(13) << 8 | GetByte(12),
+//                          GetByte(11) << 8 | GetByte(10), GetByte(9) << 8 | GetByte(8),
+//                          GetByte(7) << 8 | GetByte(6), GetByte(5) << 8 | GetByte(4),
+//                          GetByte(3) << 8 | GetByte(2), GetByte(1) << 8 | GetByte(0));
 
 #[cfg(test)]
 mod tests {
@@ -430,9 +499,14 @@ mod tests {
         assert!(ip.is_valid());
     }
 
+    #[test]
+    fn test_parsing_and_formatting() {
+        let ip: RawIP = "127.0.0.1".parse().unwrap();
+        assert_eq!("127.0.0.1", format!("{}", ip));
+
+        let ip: RawIP = "2001:0DB8:85A3:0000:0000:8A2E:0370:7334".parse().unwrap();
+        assert_eq!("2001:0DB8:85A3:0000:0000:8A2E:0370:7334", format!("{}", ip));
+    }
+
     //TODO reachability score .
 }
-
-//TODO implement Display
-//TODO implement custom Debug.
-//TODO HASH impl
