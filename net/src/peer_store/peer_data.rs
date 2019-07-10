@@ -21,6 +21,7 @@ pub struct PeerData {
 }
 
 //TODO impl Defaults
+//TODO tests from bitcoin / test all functions.
 
 impl PeerData {
     // pub fn new() -> Self {}
@@ -30,14 +31,13 @@ impl PeerData {
         //Hash 1
         let hash_data = Buffer::new();
         hash_data.write_u256(key);
-        //TODO fix this
-        // hash_data.extend(Buffer::from(self.address.get_unique_key()));
+        hash_data.extend_from_slice(self.address.get_unique_key().as_ref());
         let hash = murmur3::hash32(hash_data);
 
         //Hash 2
         let hash_data = Buffer::new();
         hash_data.write_u256(key);
-        // hash_data.append(self.address.get_group());
+        hash_data.append(self.address.get_group().as_mut());
         hash_data.write_u32(hash % TRIED_BUCKETS_PER_GROUP);
 
         let hash = murmur3::hash32(hash_data);
