@@ -1,9 +1,9 @@
 use crate::error;
 use crate::types::{IdentityKey, RawIP, Services};
 // use crate::Result;
-use chrono::{DateTime, TimeZone, Utc};
 use extended_primitives::Buffer;
 use handshake_protocol::encoding::{Decodable, Encodable};
+use handshake_types::Time;
 use std::convert::TryFrom;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
@@ -16,7 +16,7 @@ pub struct NetAddress {
     pub raw: RawIP,
     pub port: u16,
     pub services: Services,
-    pub time: DateTime<Utc>,
+    pub time: Time,
     pub key: IdentityKey,
 }
 
@@ -27,9 +27,7 @@ impl NetAddress {
             raw: RawIP::from(addr.ip()),
             port: addr.port(),
             key,
-            //Wrap time into our own type because this will become troublesome. TODO
-            time: Utc.timestamp(Utc::now().timestamp(), 0),
-            //Init as none, can change later.
+            time: Time::new(),
             services: Services::UNKNOWN,
         }
     }
@@ -151,7 +149,7 @@ impl Encodable for NetAddress {
     fn encode(&self) -> Buffer {
         let mut buffer = Buffer::new();
 
-        buffer.write_u64(self.time.timestamp() as u64);
+        buffer.write_u64(self.time.to_seconds());
         buffer.write_u32(self.services.bits());
         buffer.write_u32(0);
         buffer.write_u8(0);
@@ -172,7 +170,7 @@ impl Decodable for NetAddress {
 
     fn decode(buf: &mut Buffer) -> Result<NetAddress, Self::Error> {
         //Don't like this -> See if we should just make our own time type that wraps this.
-        let timestamp = Utc.timestamp(buf.read_u64()? as i64, 0);
+        let timestamp = Time::from(buf.read_u64()?);
         let services = Services::from_bits_truncate(buf.read_u32()?);
         let mut ip_bytes = [0; 16];
 
@@ -239,7 +237,7 @@ impl FromStr for NetAddress {
             raw: RawIP::from(address.ip()),
             port: address.port(),
             key,
-            time: Utc.timestamp(Utc::now().timestamp(), 0),
+            time: Time::new(),
             services: Services::UNKNOWN,
         })
     }
@@ -273,7 +271,7 @@ mod test {
         let key = IdentityKey::from([0; 33]);
 
         let mut addr = NetAddress::new(hostname.parse().unwrap(), key);
-        addr.time = Utc.timestamp(1231006505, 0);
+        addr.time = Time::from(1231006505);
         addr.services = Services::NETWORK;
 
         assert_eq!(addr.encode().into_hex(), "29ab5f490000000001000000000000000000000000000000000000ffff7f00000100000000000000000000000000000000000000008d20000000000000000000000000000000000000000000000000000000000000000000");
