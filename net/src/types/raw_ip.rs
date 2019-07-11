@@ -197,7 +197,7 @@ impl RawIP {
     /// Test whether the IP is local
     pub fn is_local(&self) -> bool {
         // IPv4 loopback (127.0.0.0/8 or 0.0.0.0/8)
-        if self.is_ipv4() && (self.0[12] == 127 || self.0[13] == 0) {
+        if self.is_ipv4() && (self.0[12] == 127 || self.0[12] == 0) {
             return true;
         }
 
