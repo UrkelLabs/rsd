@@ -29,7 +29,7 @@ pub(crate) const MAX_FAILURES: u32 = 10;
 pub(crate) const MIN_FAIL_DAYS: u32 = 7;
 
 // how recent a successful connection should be before we allow an address to be evicted from tried
-const REPLACEMENT_HOUR: u32 = 4;
+pub(crate) const REPLACEMENT_HOURS: u64 = 4;
 
 // the maximum percentage of nodes to return in a getaddr call
 const GETADDR_MAX_PERCENT: u32 = 23;
@@ -47,4 +47,4 @@ pub(crate) const BUCKET_SIZE: usize = 1 << BUCKET_SIZE_LOG2;
 const SET_TRIED_COLLISION_SIZE: u32 = 10;
 
 // the maximum time we'll spend trying to resolve a tried table collision, in seconds
-const TEST_WINDOW: u32 = 40 * 60;
+pub(crate) const TEST_WINDOW: u64 = 40 * 60;
