@@ -106,6 +106,14 @@ impl NetAddress {
 
         group
     }
+
+    pub fn is_valid(&self) -> bool {
+        //TODO probably also check if the identity key is not null.
+        //Although, I don't think a Netaddress will ever be constructed without one, so this should
+        //be fine. Just a note that we probably still should check for self.key.is_null() something
+        //like that.
+        self.raw.is_valid()
+    }
 }
 
 //TODO we have to decide if we want to make Peers unique on
