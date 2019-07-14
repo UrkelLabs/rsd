@@ -8,20 +8,21 @@ use fasthash::murmur3;
 use handshake_types::Time;
 
 pub struct PeerData {
-    //Possibly change these to u64, but Datetime should work as well
-    //Let's change this to the internal time type though.
-    pub last_counted_try: Time,
+    //Public
+    pub last_counted_attempt: Time,
     pub last_try: Time,
     pub address: NetAddress,
 
-    // These should probably be protected.
-    source: NetAddress,
+    //Protected
     pub(crate) last_success: Time,
+    pub(crate) ref_count: u32,
+    pub(crate) in_tried: bool,
+    pub(crate) random_position: usize,
+
+    //Private
+    source: NetAddress,
     attempts: u32,
-    ref_count: u32,
-    in_tried: bool,
     //TODO figure out what this is.
-    random_position: u32,
 }
 
 //TODO impl Defaults
@@ -50,10 +51,8 @@ impl PeerData {
     }
 
     //Calculate which "new" bucket this entry belows, dependent on the source.
-    //None will calculate with the default source.
-    pub fn get_new_bucket(&self, key: Uint256, src: NetAddress) -> usize {
-        //TODO its possible we just use the internal source here instead of a param.
-        let mut source_group = src.get_group();
+    pub fn get_new_bucket(&self, key: Uint256) -> usize {
+        let mut source_group = self.source.get_group();
 
         // Hash 1
         let mut hash_data = Buffer::new();
@@ -144,6 +143,14 @@ impl PeerData {
 
     pub(crate) fn is_valid(&self) -> bool {
         self.address.is_valid()
+    }
+
+    pub(crate) fn mark_good(&mut self) {
+        let now = Time::now();
+
+        self.last_try = now;
+        self.last_success = now;
+        self.attempts = 0;
     }
 }
 
