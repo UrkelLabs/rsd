@@ -1,11 +1,11 @@
 // total number of buckets for tried addresses
-const TRIED_BUCKET_COUNT_LOG2: u32 = 8;
+pub(crate) const TRIED_BUCKET_COUNT_LOG2: u32 = 8;
 
 // total number of buckets for new addresses
-const NEW_BUCKET_COUNT_LOG2: u32 = 10;
+pub(crate) const NEW_BUCKET_COUNT_LOG2: u32 = 10;
 
 // maximum allowed number of entries in buckets for new and tried addresses
-const BUCKET_SIZE_LOG2: u32 = 6;
+pub(crate) const BUCKET_SIZE_LOG2: u32 = 6;
 
 // over how many buckets entries with tried addresses from a single group (/16 for IPv4) are spread
 pub(crate) const TRIED_BUCKETS_PER_GROUP: u32 = 8;
