@@ -14,8 +14,9 @@ pub struct PeerData {
     pub last_try: Time,
     pub address: NetAddress,
 
+    // These should probably be protected.
     source: NetAddress,
-    last_success: Time,
+    pub(crate) last_success: Time,
     attempts: u32,
     ref_count: u32,
     in_tried: bool,
@@ -30,7 +31,7 @@ impl PeerData {
     // pub fn new() -> Self {}
 
     /// Calculate which "tried" bucket this entry belongs
-    pub fn get_tried_bucket(&self, key: Uint256) -> u32 {
+    pub fn get_tried_bucket(&self, key: Uint256) -> usize {
         // Hash 1
         let mut hash_data = Buffer::new();
         hash_data.write_u256(key);
@@ -43,14 +44,14 @@ impl PeerData {
         hash_data.append(self.address.get_group().as_mut());
         hash_data.write_u32(hash % TRIED_BUCKETS_PER_GROUP);
 
-        let hash = murmur3::hash32(hash_data);
+        let hash = murmur3::hash32(hash_data) as usize;
 
-        hash % TRIED_BUCKET_COUNT as u32
+        hash % TRIED_BUCKET_COUNT
     }
 
     //Calculate which "new" bucket this entry belows, dependent on the source.
     //None will calculate with the default source.
-    pub fn get_new_bucket(&self, key: Uint256, src: NetAddress) -> u32 {
+    pub fn get_new_bucket(&self, key: Uint256, src: NetAddress) -> usize {
         //TODO its possible we just use the internal source here instead of a param.
         let mut source_group = src.get_group();
 
@@ -68,14 +69,14 @@ impl PeerData {
         hash_data.append(&mut source_group);
         hash_data.write_u32(hash % NEW_BUCKETS_PER_SOURCE_GROUP);
 
-        let hash = murmur3::hash32(hash_data);
+        let hash = murmur3::hash32(hash_data) as usize;
 
-        hash % NEW_BUCKET_COUNT as u32
+        hash % NEW_BUCKET_COUNT
     }
 
     /// Calculate in which position of a bucket to store this entry.
     /// Returns the index of the bucket.
-    pub fn get_bucket_position(&self, key: Uint256, new: bool, bucket: u32) -> u32 {
+    pub fn get_bucket_position(&self, key: Uint256, new: bool, bucket: usize) -> usize {
         let mut hash_data = Buffer::new();
         hash_data.write_u256(key);
         if new {
@@ -83,12 +84,13 @@ impl PeerData {
         } else {
             hash_data.write_str("K");
         }
-        hash_data.write_u32(bucket);
+        //TODO we might want to build a write_usize function for Buffer, and then not convert this.
+        hash_data.write_u32(bucket as u32);
         hash_data.extend_from_slice(self.address.get_unique_key().as_ref());
 
-        let hash = murmur3::hash32(hash_data);
+        let hash = murmur3::hash32(hash_data) as usize;
 
-        hash % BUCKET_SIZE as u32
+        hash % BUCKET_SIZE
     }
 
     //TODO I think this should take a time in.
@@ -138,6 +140,10 @@ impl PeerData {
         chance *= 0.66f64.powi(std::cmp::min(self.attempts as i32, 8));
 
         chance
+    }
+
+    pub(crate) fn is_valid(&self) -> bool {
+        self.address.is_valid()
     }
 }
 
