@@ -1,10 +1,9 @@
-use crate::common::MAX_REFS;
 use crate::NetAddress;
 use crate::Result;
 use extended_primitives::Uint256;
 use handshake_protocol::network::Network;
 use handshake_types::Time;
-use log::{info, warn};
+use log::info;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -12,24 +11,12 @@ use std::sync::RwLock;
 mod common;
 mod peer_data;
 
-// use common::{BUCKET_SIZE, NEW_BUCKET_COUNT, TRIED_BUCKET_COUNT};
 use peer_data::PeerData;
-// use crate::peer_store::peer_data
 
-use crate::peer_store::common::{
+use common::{
     BUCKET_SIZE, BUCKET_SIZE_LOG2, NEW_BUCKET_COUNT, REPLACEMENT_HOURS, TEST_WINDOW,
     TRIED_BUCKET_COUNT, TRIED_BUCKET_COUNT_LOG2,
 };
-
-// pub enum Scores {
-//     None = 0,
-//     If = 1,
-//     Bind = 2,
-//     Upnp = 3,
-//     Dns = 3,
-//     Manual = 4,
-//     Max = 5,
-// }
 
 //TODO PeerStore should just accept a config of a trait that implements Datastore
 //That way anyone or any plugin can just provide their own store and it will get passed down to
@@ -42,11 +29,6 @@ pub struct PeerStoreConfig {
     max_buckets: u32,
 }
 
-//TODO impl default on peer store config.
-
-// this.banTime = common.BAN_TIME;
-//  this.maxBuckets = 20;
-// this.maxEntries = 50;
 //
 // TODO need to impl our own time variable in Handshake_Types. Look at what Grin does.
 //  //! last used nId
@@ -103,17 +85,17 @@ pub struct PeerStore {
     key: Uint256,
     network: Network,
     //WHAT IS THIS? TODO
-    address: NetAddress,
+    // address: NetAddress,
     // dns_seeds: Vec<SocketAddr>
     // dns_nodes: Vec<SocketAddr>
-    peer_data: RwLock<HashMap<NetAddress, PeerData>>,
-    fresh: RwLock<Vec<HashMap<NetAddress, PeerData>>>,
+    // peer_data: RwLock<HashMap<NetAddress, PeerData>>,
+    // fresh: RwLock<Vec<HashMap<NetAddress, PeerData>>>,
     //TODO probably don't need. can just say fresh.len()
-    total_fresh: u32,
-    used: RwLock<Vec<Vec<NetAddress>>>,
-    total_used: u32,
-    nodes: RwLock<Vec<NetAddress>>,
-    needs_flush: bool,
+    // total_fresh: u32,
+    // used: RwLock<Vec<Vec<NetAddress>>>,
+    // total_used: u32,
+    // nodes: RwLock<Vec<NetAddress>>,
+    // needs_flush: bool,
     //TODO add banned list.
     //     this.timer = null;
     //     this.needsFlush = false;
@@ -123,7 +105,39 @@ pub struct PeerStore {
 
 //I think the goal is to keep this file as a json file to allow easy parsing.
 impl PeerStore {
-    pub fn new() {}
+    //TODO 1. Probably don't even need network. 2. This should be a config option, OR
+    //Should be builder pattern.
+    pub fn new(network: Network) -> PeerStore {
+        let id_count = 0;
+        let map_info = HashMap::new();
+        let map_address = HashMap::new();
+        let random = Vec::new();
+        let tried_count = 0;
+        let tried = [[None; TRIED_BUCKET_COUNT]; BUCKET_SIZE];
+        let new_count = 0;
+        let new = [[None; NEW_BUCKET_COUNT]; BUCKET_SIZE];
+        //Initially at 1 so that "never" is strictly worse.
+        let last_good = Time::new() + 1;
+        let tried_collisions = Vec::new();
+        //TODO
+        // let key = Uint256::random();
+        let key = Uint256::default();
+
+        PeerStore {
+            id_count,
+            map_info,
+            map_address,
+            random,
+            tried_count,
+            tried,
+            new,
+            new_count,
+            last_good,
+            tried_collisions,
+            key,
+            network,
+        }
+    }
 
     //Returns an address that is attempting to be evicted by another address.
     pub fn select_tried_collision(&self) -> Result<Option<NetAddress>> {
@@ -558,181 +572,6 @@ impl PeerStore {
 //    //     .write(true)
 //    //     .create(true)
 //    //     .open("");
-//}
-
-//pub fn init_add() {
-
-//    // const options = this.options;
-//    // const scores = HostList.scores;
-
-//    // this.setSeeds(options.seeds);
-//    // this.setNodes(options.nodes);
-
-//    // this.pushLocal(this.address, scores.MANUAL);
-//    // this.addLocal(options.host, options.port, scores.BIND);
-
-//    // const hosts = IP.getPublic();
-//    // const port = this.address.port;
-
-//    // for (const host of hosts)
-//    // this.addLocal(host, port, scores.IF);
-
-//    // this.added = true;<Paste>
-
-//}
-
-//pub fn add(&mut self, addr: NetAddress, src: Option<NetAddress>) -> Result<bool> {
-//    let entry = self.peer_data.read()?.get_mut(addr);
-
-//    //is some
-//    if let Some(entry) = entry {
-//        let mut penalty = 2 * 60 * 60;
-//        let mut interval = 24 * 60 * 60;
-
-//        if src.is_none() {
-//            penalty = 0;
-//        }
-
-//        //What is this? TODO
-//        entry.address.services |= addr.services;
-//        //TODO I don't think we need ot do this
-//        entry.address.services >>= 0;
-
-//        let now = Utc.timestamp();
-
-//        if now - addr.time < interval {
-//            interval = 60 * 60;
-//        }
-
-//        if entry.address.time < addr.time - interval - penalty {
-//            entry.address.time = addr.time;
-//            self.needs_flush = true;
-//        }
-
-//        if entry.address.time && addr.time <= entry.address.time {
-//            return Ok(false);
-//        }
-
-//        if entry.used {
-//            return Ok(false);
-//        }
-
-//        //Make source ref count is not 0? TODO
-//        // assert(entry.refCount > 0);
-
-//        if entry.ref_count == MAX_REFS {
-//            return Ok(false);
-//        }
-
-//        //Maybe check this? TODO theoretically should never go beyond but maybe have a check
-//        //and throw an error.
-//        //   assert(entry.refCount < HostList.MAX_REFS);
-
-//        let mut factor = 1;
-//        for _ in 0..entry.ref_count {
-//            factor *= 2;
-
-//            if random(factor) != 0 {
-//                return Ok(false);
-//            }
-//        }
-//    //Is none.
-//    } else {
-//        if self.is_full() {
-//            return Ok(false);
-//        }
-
-//        //TODO doublecheck this
-//        if src.is_none() {
-//            src = Some(self.address);
-//        }
-
-//        entry = self.total_fresh += 1;
-//    }
-
-//    let mut bucket = self.fresh_bucket(entry);
-
-//    // const bucket = this.freshBucket(entry);
-
-//    // if (bucket.has(entry.key()))
-//    // return false;
-
-//    // if (bucket.size >= this.options.maxEntries)
-//    // this.evictFresh(bucket);
-
-//    // bucket.set(entry.key(), entry);
-//    // entry.refCount += 1;
-
-//    // this.map.set(entry.key(), entry);
-//    // this.needsFlush = true;
-
-//    // return true;<Paste>
-
-//    Ok(())
-//}
-
-//pub fn is_full(&self) -> bool {
-//    let max = self.config.max_buckets * self.config.max_entries;
-
-//    self.size() >= max
-//}
-
-//pub fn size(&self) -> u32 {
-//    self.total_used + self.total_fresh
-//}
-
-//// if (entry) {
-
-//// } else {
-////   if (this.isFull())
-////     return false;
-
-////   if (!src)
-////     src = this.address;
-
-////   entry = new HostEntry(addr, src);
-
-////   this.totalFresh += 1;
-//// }
-
-//// const bucket = this.freshBucket(entry);
-
-//// if (bucket.has(entry.key()))
-////   return false;
-
-//// if (bucket.size >= this.options.maxEntries)
-////   this.evictFresh(bucket);
-
-//// bucket.set(entry.key(), entry);
-//// entry.refCount += 1;
-
-//// this.map.set(entry.key(), entry);
-//// this.needsFlush = true;
-
-//// return true;
-
-//pub fn set_seeds() {
-//    // "node.urkel.io"
-
-//    // addSeed(host) {
-//    // const ip = IP.fromHostname(host, this.network.port);
-//    // let socketaddr = parse
-
-//    // if (ip.type === IP.types.DNS) {
-//    // // Defer for resolution.
-//    // this.dnsSeeds.push(ip);
-//    // return null;
-//    // }
-
-//    // if (!ip.key)
-//    // throw new Error('Must have identity key.');
-
-//    // const addr = NetAddress.fromHost(ip.host, ip.port, ip.key, this.network);
-
-//    // this.add(addr);
-
-//    // return addr;
-//    // }
 //}
 
 //Needs to print a random boolean
