@@ -1,48 +1,339 @@
+use crate::peer::Peer;
+use crate::peer_list::PeerList;
+use crate::Result;
+// use futures::task::{Spawn, SpawnExt};
+use futures_timer::Delay;
+use futures::lock::Mutex;
+use log::info;
+use std::sync::Arc;
+use std::time::Duration;
+use crate::peer_store::PeerStore;
+
 //TODO cleanup imports
 // use crate::blockchain::chain::Chain;
 // use crate::protocol::network::Network;
 
-//pub struct Pool {
-//    network: Network,
-//    chain: Chain,
-//    // mempool: Mempool,
-//    // server: TCP?
-//    // nonces: no idea what this is for.
-//    //TODO logger.
-//    //     this.locker = new Lock(true, BufferMap);
-//    //     this.connected = false;
-//    //     this.disconnecting = false;
-//    //     this.syncing = false;
-//    //     this.discovering = false;
-//    //     this.spvFilter = null;
-//    //     this.txFilter = null;
-//    //     this.blockMap = new BufferSet();
-//    //     this.txMap = new BufferSet();
-//    //     this.claimMap = new BufferSet();
-//    //     this.airdropMap = new BufferSet();
-//    //     this.compactBlocks = new BufferSet();
-//    //     this.invMap = new BufferMap();
-//    //     this.nameMap = new BufferMap();
-//    //     this.pendingFilter = null;
-//    //     this.pendingRefill = null;
+//Set defaults for these. Also probably put these in it's own file -> config.rs
+//Should also probably be named something like p2p config or net config.
+#[derive(Clone)]
+pub struct PoolConfig {
+    pub max_outbound: u32,
+    pub max_inbound: u32,
+}
 
-//    //     this.checkpoints = false;
-//    //     this.headerChain = new List();
-//    //     this.headerNext = null;
-//    //     this.headerTip = null;
+//TODO possible name this p2p server.
+#[derive(Clone)]
+pub struct Pool {
+    //TODO does this actually need to be an arc?
+    peers: Arc<Mutex<PeerList>>,
+    config: PoolConfig,
+    connected: bool,
+    store: Arc<PeerStore>,
+}
 
-//    //     this.peers = new PeerList();
-//    //     this.hosts = new HostList(this.options);
-//    //     this.id = 0;
+//Juliex doesn't impl Spawn or Spawn Ext -> Either this is my misunderstanding of how to use these
+//traits, or it needs to be impled. Either way for faster dev I'm going to bake Juliex in, only to
+//take out later.
+// impl<T> Pool<T>
+// where
+//     T: SpawnExt,
+// {
+impl Pool {
+    //Should accept some kind of config.
+    //TODO we max_inboundht not always need a listener in this pool, so it doesn't have to be
+    //constructed as a generic since it would just be useless initalization. Actually, scratch
+    //that, we can just use the builder pattern here and we should be completely fine.
+    pub fn new(config: PoolConfig) -> Result<Pool> {
+        //Probably grab this from hosts.json file.
+        let peer_list = PeerList::new();
+        let peer_store = PeerStore::new();
 
-//    //     if (this.options.spv) {
-//    //       this.spvFilter = BloomFilter.fromRate(
-//    //         20000, 0.001, BloomFilter.flags.ALL);
-//    //     }
+        Ok(Pool {
+            config,
+            peers: Arc::new(Mutex::new(peer_list)),
+            connected: false,
+            store: Arc::new(peer_store),
+        })
+    }
 
-//    //     if (!this.options.mempool)
-//    //       this.txFilter = new RollingFilter(50000, 0.000001);
+    //Main
+    pub async fn start(&self) -> Result<()> {
+        // 1. Make sure all options are initalized (will probably come in the new function.
+        // 2. Attempt to read the Peers.dat/hosts.json file. If it works, load up the peer store.
+        // 3. Start the listening function (if listening) (async)
+        // 4. Start the new connections function (async)
+        // 5. Start DNS Seed function (if dns seeds are enabled (async)
+        // TODO spawn a task that just does feeler connections
+        // Function for dumping network addresses to peer store to be saved to the file. This
+        // should either be a function peer_store, or here.
+        let pool_pointer = self.clone();
 
-//    //     this.init();
-//    //   }
-//}
+        juliex::spawn(async move {pool_pointer.open_connections().await.unwrap()});
+
+        //Infinite loop for start.
+        loop {
+
+        }
+
+        Ok(())
+    }
+
+    async fn open_connections(&self) -> Result<()> {
+        //infinite loop
+        loop {
+            //Sleep here for some amount of time.
+            let need = self.config.max_outbound - self.peers.lock().await.outbound;
+
+            //If we don't need any then reset loop
+            if need == 0 {
+                continue;
+            }
+
+            info!(
+                "Refilling peers ({}/{}).",
+                self.peers.lock().await.outbound, self.config.max_outbound
+            );
+
+            //Sleep for 500 milliseconds
+            Delay::new(Duration::from_millis(500)).await?;
+
+            info!("Slept for 500ms!");
+
+            //Resolve any collisions in the peer store.
+            self.store.resolve_collisions().await?;
+
+            //Find a valid address.
+            //Open the connection.
+            //If successful, then let loop occur.
+        }
+
+        // this.logger.debug('Refilling peers (%d/%d).',
+        //   this.peers.outbound,
+        //   this.options.maxOutbound);
+
+        // for (let i = 0; i < need; i++)
+        //   this.addOutbound();
+
+        //pub async fn listen(&self) -> Result<()> {
+        //    //Open up the server, and attempt to bind to the port.
+        //    //If that is successful, then for each new connection check if we are below the acceptable
+        //    //new connections
+        //    //If we are, then create a new peer from that connection and spawn them into a new task.
+        //    //For the above, I think we should do the new handshake in that function, and then spawn
+        //    //the peer into it's own handler.
+        //    let mut listener = TcpListener::bind(&"127.0.0.1:7878".parse().unwrap())?;
+        //    let mut incoming = listener.incoming();
+
+        //    info!("Listening on 127.0.0.1:7878");
+
+        //    while let Some(stream) = incoming.next().await {
+        //        let stream = stream?;
+        //        let addr = stream.peer_addr()?;
+        //        let peer =
+        //        self.executor.spawn(async move {
+        //                info!("Accepting stream from: {}", addr);
+
+        //                recite_shakespeare(stream).await.unwrap();
+
+        //                println!("Closing stream from: {}", addr);
+        //            }).unwrap()
+        //    }
+        //}
+
+        //Connects the pool to nodes/etc.
+        //pub async fn connect(&mut self) -> Result<()> {
+        //    if self.connected {
+        //        return;
+        //    }
+
+        //    //Open up the hosts file.
+        //    //This should be handled in PeerList::new up above, so I think we can skip this.
+
+        //    // self.discover_gateway().await?;
+        //    // TODO remove this and replace with PR from bitcoin core.
+        //    // self.discover_external().await?;
+        //    self.discover_seeds(false).await?;
+
+        //    // this.fillOutbound();
+
+        //    // await this.listen();
+
+        //    // this.startTimer();
+
+        //    // this.connected = true;
+        //    //
+        //}
+
+        //TODO can't do until we finish host file.
+        // pub async fn discover_seeds(&mut self) {}
+
+        // if (this.hosts.dnsSeeds.length === 0)
+        //   return;
+
+        // const max = Math.min(2, this.options.maxOutbound);
+        // const size = this.hosts.size();
+
+        // let total = 0;
+        // for (let peer = this.peers.head(); peer; peer = peer.next) {
+        //   if (!peer.outbound)
+        //     continue;
+
+        //   if (peer.connected) {
+        //     if (++total > max)
+        //       break;
+        //   }
+        // }
+
+        // if (size === 0 || (checkPeers && total < max)) {
+        //   this.logger.warning('Could not find enough peers.');
+        //   this.logger.warning('Hitting DNS seeds...');
+
+        //   await this.hosts.discoverSeeds();
+
+        //   this.logger.info(
+        //     'Resolved %d hosts from DNS seeds.',
+        //     this.hosts.size() - size);
+
+        //   this.refill();
+        // }
+
+        //Likely going to remove this for the bitcoin core path.
+        // pub async fn discover_external(&mut self) -> Result<()> {
+
+        // }
+
+        //TODO UPNP options. Not going to implement for now
+        //See: https://docs.rs/igd/0.9.0/igd/
+        // pub async fn discover_gateway() {
+        //     unimplemented!();
+        // }
+
+        //Main function of the pool -> Initalizes everything for the pool, and then triggers 3 threads
+        //1. Inital sync thread.
+        //2. Listen thread (If listen is configured).
+        //3. Get Outbound Peers thread.
+        //pub fn run(&mut self) {
+        //    //Reset the header chain here.
+
+        //    //I think we should have a channel that this pool loops on and listens to. Any messages
+        //    //That require the pool to act on are read through and then handled accordingly.
+        //    //self.thread_pool.run( async {
+        //    //    loop {
+        //    //        //Check if stop state from above has been called. TODO
+        //    //    }
+        //    //});
+        //}
+
+        //ALso run in it's own thread
+        //This is only run if the node wants to listen for inbound peers.
+        // pub fn listen(&mut self) {
+        //     unimplemented!();
+        // }
+
+        //Unclear if this function is needed.
+        //TODO I think we can remove this function since we don't have checkpoints in Handshake.
+        //pub fn reset_chain(&mut self) {
+        //    //Current header tip
+        //    self.header_tip = None;
+        //    //list of header entries. TODO
+        //    self.header_chain = vec![];
+        //    //I'm guessing this is the next header to be added
+        //    self.header_next = None;
+        //}
+
+        //Run it in it's own thread -> Should run indefinitely.
+        // pub fn sync(&mut self) {}
+
+        //pub async fn fill_outbound(&mut self) {
+        //    let need = self.config.max_outbound - self.peers.outbound;
+
+        //    if self.peers.loader.is_none() {
+        //        self.add_loader();
+        //    }
+
+        //    //Double check this logic here
+        //    if need == 0 {
+        //        return;
+        //    }
+
+        //    for _ in 0..need {
+        //        // self.add_outbound();
+        //    }
+        //}
+
+        //pub fn add_loader(&mut self) {
+        //    if self.peers.loader.is_some() {
+        //        return;
+        //    }
+
+        //    //Iterate over peer list.
+        //    let mut iter = self.peers.get_connected().into_iter();
+
+        //    //Iterate over existing peers to find any that could be set as loaders, if not continue.
+        //    while let Some(peer) = iter.next() {
+        //        if !peer.is_outbound() {
+        //            continue;
+        //        }
+
+        //        self.set_loader(peer);
+
+        //        return;
+        //    }
+
+        //    //Grab a random host from the peerlist.
+        //    let address = match self.peers.get_host() {
+        //        Ok(addr) => addr,
+        //        Err(_) => return,
+        //    };
+
+        //    // let peer = this.createOutbound(addr);
+
+        //    // this.logger.info('Adding loader peer (%s).', peer.hostname());
+
+        //    // this.peers.add(peer);
+
+        //    // this.setLoader(peer);
+        //    // }
+        //}
+
+        //pub fn set_loader(&mut self, mut peer: Arc<Peer>) -> Result<()> {
+        //    //TODO I don't think we need these checks, but leaving them here for now.
+        //    // assert(peer.outbound);
+        //    // assert(!this.peers.load);
+        //    // assert(!peer.loader);
+
+        //    //These both need to be RwLock TODO
+        //    peer.set_loader(true)?;
+        //    self.peers.set_loader_peer(peer);
+
+        //    //TODO start the syncing.
+        //    //self.send_sync(peer);
+
+        //    // this.emit('loader', peer);
+        //    Ok(())
+        //}
+
+        // pub fn create_outbound(&mut self, addr: NetAddress) -> Result<()> {
+
+        // }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::executor::block_on;
+
+    #[test]
+    fn test_pool_run() {
+        let config = PoolConfig {
+            max_outbound: 8,
+            max_inbound: 8,
+        };
+
+        let pool = Pool::new(config).unwrap();
+        //TODO after a timeout, trigger the stop state.
+
+        block_on(async { pool.start().await});
+    }
+}
