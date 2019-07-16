@@ -1,5 +1,5 @@
 use extended_primitives::{Buffer, Hash};
-use handshake_protocol::encoding::{Decodable, Encodable, Error};
+use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 
 enum InvType {
     Tx = 1,
@@ -57,17 +57,18 @@ impl Encodable for Inventory {
 
         buffer.write_u32(self._type as u32);
         buffer.write_hash(self.hash);
+
+        buffer
     }
 }
 
 impl Decodable for Inventory {
-    type Error = Error;
+    type Error = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
         let num_type = buffer.read_u32()?;
 
-        //TODO this is messy, and I'd like more verbose errors. Either let me put a message into
-        //Decoding error or wrap this.
+        //Probably wrap this into a function TODO
         let _type = match num_type {
             1 => InvType::Tx,
             2 => InvType::Block,
@@ -75,7 +76,7 @@ impl Decodable for Inventory {
             4 => InvType::CompactBlock,
             5 => InvType::Claim,
             6 => InvType::Airdrop,
-            _ => return Err(Error::DecodingError),
+            _ => return Err(DecodingError::UnknownInvetory),
         };
         let hash = buffer.read_hash()?;
 
