@@ -1,5 +1,6 @@
 use crate::peer::Peer;
 use crate::peer_list::PeerList;
+use handshake_types::Time;
 use crate::Result;
 // use futures::task::{Spawn, SpawnExt};
 use futures_timer::Delay;
@@ -8,6 +9,7 @@ use log::info;
 use std::sync::Arc;
 use std::time::Duration;
 use crate::peer_store::PeerStore;
+use crate::NetAddress;
 
 //TODO cleanup imports
 // use crate::blockchain::chain::Chain;
@@ -29,6 +31,7 @@ pub struct Pool {
     config: PoolConfig,
     connected: bool,
     store: Arc<PeerStore>,
+    // connected_groups: Mutex<Vec<Vec<u8>>>
 }
 
 //Juliex doesn't impl Spawn or Spawn Ext -> Either this is my misunderstanding of how to use these
@@ -101,6 +104,68 @@ impl Pool {
 
             //Resolve any collisions in the peer store.
             self.store.resolve_collisions().await?;
+
+            let start = Time::now();
+            let mut attempts: u32 = 0;
+            let feeler = false;
+            let address_connect: NetAddress;
+
+            loop {
+                let mut data_locked = self.store.select_tried_collision().await;
+
+                if !feeler || data_locked.is_none() {
+                    data_locked = self.store.select(feeler).await;
+                }
+
+                //Get the lock on the data
+                //TODO remove the unwrap here and put it into a break if statment. Probably if let
+                //statement here.
+                let data = data_locked.unwrap().lock().await;
+
+                //TODO we aren't checking groups right now as how we are returning them is bad.
+                // let connected_groups = self.connected_groups.lock().await;
+
+                // if !feeler || self.connected_groups
+
+                if !data.address.is_valid() || data.address.is_local() {
+                    break;
+                }
+
+                attempts += 1;
+
+                if attempts > 100 {
+                    break;
+                }
+
+                if !data.address.is_reachable() {
+                    continue;
+                }
+
+                if start - data.last_try < 600 && attempts < 30 {
+                    continue;
+                }
+
+                if !feeler && !self.has_all_desirable_service_flags(address.services) {
+                    continue;
+                } else if feeler && may_have_useful_address_db(address.services) {
+                    continue;
+                }
+
+                if address.get_port() != default_port && attempts < 50 {
+                    continue;
+                }
+
+                //TODO rename address in here to data.
+                address_connect = data.address;
+                break;
+            };
+
+            if address_connect.is_valid() {
+                if feeler {
+                    //TODO add a random amount of noise before connection to avoid synchronization.
+                    }
+                //Make the connection to the address probably means new peer.
+            }
 
             //Find a valid address.
             //Open the connection.
