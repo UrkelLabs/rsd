@@ -8,7 +8,7 @@ use handshake_protocol::encoding::{Decodable, Encodable};
 use handshake_protocol::network::Network;
 use rand::Rng;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Packet {
     Version(VersionPacket),
     Verack,
@@ -28,6 +28,20 @@ impl Packet {
         Ok((packet, _type))
     }
 
+    //Function to frame the version packet.
+    pub fn frame(&self, network: Network) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_u32(network.magic());
+        buffer.write_u8(self.packet_type());
+        buffer.write_u32(self.size());
+
+        //Write encoded packet
+        buffer.extend(self.encode());
+
+        buffer
+    }
+
     pub fn decode(packet: Buffer) -> Result<Self> {
         let (raw_packet, packet_type) = Packet::parse(packet)?;
         match packet_type {
@@ -39,9 +53,36 @@ impl Packet {
             _ => Ok(Packet::Ping),
         }
     }
+
+    //TODO maybe switch this to the trait encodable -> TODO
+    pub fn encode(&self) -> Buffer {
+        match self {
+            Packet::Version(version) => version.encode(),
+            //TODO check verack encoding.
+            Packet::Verack => Buffer::new(),
+            _ => Buffer::new(),
+        }
+    }
+
+    pub fn packet_type(&self) -> u8 {
+        match self {
+            Packet::Version(_) => 0,
+            Packet::Verack => 1,
+            _ => 2,
+        }
+    }
+
+    pub fn size(&self) -> u32 {
+        match self {
+            Packet::Version(version) => version.size(),
+            //TODO is verack size 0?
+            Packet::Verack => 0,
+            _ => 0,
+        }
+    }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PacketType {
     Version = 0,
     Verack = 1,
@@ -81,7 +122,7 @@ pub enum PacketType {
 //Optionally all packets go inside of a Packet enum and we use that to implement frame, which we
 //can remove from peer. Not sure if that's the way we want to go, but this should work for now.
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VersionPacket {
     _type: PacketType,
     version: ProtocolVersion,
@@ -112,23 +153,6 @@ impl VersionPacket {
             height,
             no_relay,
         }
-    }
-
-    //Function to frame the version packet.
-    //we should maybe make this a trait.
-    //Trait Packet
-    //should impl frame, and parse
-    pub fn frame(&self, network: Network) -> Buffer {
-        let mut buffer = Buffer::new();
-
-        buffer.write_u32(network.magic());
-        buffer.write_u8(self._type as u8);
-        buffer.write_u32(self.size());
-
-        //Write encoded packet
-        buffer.extend(self.encode());
-
-        buffer
     }
 
     fn decode(mut packet: Buffer) -> Result<Self> {
