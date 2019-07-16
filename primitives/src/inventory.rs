@@ -1,6 +1,7 @@
 use extended_primitives::{Buffer, Hash};
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 
+#[derive(Copy, Clone, Debug)]
 enum InvType {
     Tx = 1,
     Block = 2,
@@ -53,7 +54,7 @@ impl Encodable for Inventory {
     }
 
     fn encode(&self) -> Buffer {
-        let buffer = Buffer::new();
+        let mut buffer = Buffer::new();
 
         buffer.write_u32(self._type as u32);
         buffer.write_hash(self.hash);
