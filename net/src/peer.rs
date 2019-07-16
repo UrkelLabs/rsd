@@ -3,6 +3,7 @@ use crate::packets::{Packet, VersionPacket};
 //TODO reimplement when types crate is available.
 use crate::types::{IdentityKey, ProtocolVersion};
 use crate::Result;
+use crate::error::Error;
 use brontide::{BrontideStream, BrontideStreamBuilder};
 use chrono::{DateTime, Utc};
 use extended_primitives::Buffer;
@@ -11,11 +12,20 @@ use handshake_protocol::network::Network;
 use handshake_types::difficulty::Difficulty;
 use romio::TcpStream;
 use std::sync::{Arc, RwLock};
+use futures::lock::Mutex;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Direction {
     Outbound = 0,
     Inbound = 1,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum State {
+    Connected,
+    Banned,
+    //TODO might not need disconnected
+    Disconnected,
 }
 
 #[derive(Clone, Debug)]
@@ -40,11 +50,15 @@ pub struct PeerInfo {
     // pub live_info: Arc<RwLock<PeerLiveInfo>>,
 }
 
+//TODO do we really need to have a network here?
 pub struct Peer {
     pub info: PeerInfo,
     pub brontide: BrontideStream<TcpStream>,
     pub network: Network,
-    // state: Arc<RwLock<State>>,
+    pub state: Arc<RwLock<State>>,
+    //TODO this might need to be RwLock
+    pub loader: RwLock<bool>,
+    pub queue: Mutex<Vec<Packet>>,
     // // set of all hashes known to this peer (so no need to send)
     // tracking_adapter: TrackingAdapter,
     // tracker: Arc<conn::Tracker>,
@@ -60,7 +74,6 @@ impl Peer {
     fn new() {}
 
     //Connect to a new peer.
-    //TODO return a result
     //TODO should be a custom key type. - not sure if we want to store this inside of the peer.
     pub async fn connect(addr: NetAddress, key: [u8; 32], network: Network) -> Result<Peer> {
         //I think this returns a result.
@@ -83,16 +96,133 @@ impl Peer {
             version: ProtocolVersion::from(0),
         };
 
+        //TODO remove all non-future aware locks here
+        let state = Arc::new(RwLock::new(State::Connected));
+
         Ok(Peer {
             info: peer_info,
             brontide: stream,
+            loader: RwLock::new(false),
             network,
+            state,
+            queue: Mutex::new(Vec::new()),
         })
     }
 
-    //Accept an incoming connection. TODO
-    // pub fn accept() {}
-    //
+    //Accept an incoming connection.
+     // pub fn accept() {}
+
+    //Handle all incoming messages, and put them into a message queue.
+    pub async fn handle_messages(&mut self) -> Result<()> {
+
+        //Need to check if this peer no longer exists on each loop, since otherwise we'll never
+        //drop this.
+        loop {
+            let msg = self.next_message().await?;
+            //For debugging.
+            // dbg!(&msg);
+
+            //Get lock on message queue
+            // let mut queue = self.queue.lock().await;
+
+            // queue.push(msg);
+            //
+            if let Packet::Version(version) = msg {
+                self.handle_version(version).await?;
+                //TODO actually don't make this an if else, we need to check version is received
+                //BEFORE we even process a verack.
+            } else if let Packet::Verack = msg {
+                self.handle_verack().await?;
+            }
+
+            //Check for Verack here, if none, don't proceed -> Build a test to check for p2p
+            //leakage. Aka if we are sending or processing other messages without getting a verack
+            //and version.
+
+
+
+            // match msg {
+            //     Packet::Version(version) => self.handleVersion(version),
+            //     Packet::Verack(verack) => self.handleVerack(verack),
+            //     _ => {},
+
+            // };
+        }
+
+        Ok(())
+    }
+
+    pub async fn handle_verack(&self) -> Result<()> {
+
+        //TODO
+        dbg!("Received Verack Packet!");
+        Ok(())
+
+    }
+
+    pub async fn handle_version(&mut self, msg: VersionPacket) -> Result<()> {
+
+        //if self.info.version.is_some() {
+        //    //TODO destroy the peer. -> I Think, not sure if this is a destroyable offence.
+        //    warn!("Peer sent a duplicate version.");
+        //}
+        dbg!("Received Version Packet");
+
+        //Send back our own version.
+        self.send_version().await?;
+
+        //Send Verack
+        self.send_verack().await?;
+
+        Ok(())
+    }
+    // if (this.version !== -1)
+    //   throw new Error('Peer sent a duplicate version.');
+
+    // this.version = packet.version;
+    // this.services = packet.services;
+    // this.height = packet.height;
+    // this.agent = packet.agent;
+    // this.noRelay = packet.noRelay;
+    // this.local = packet.remote;
+    // // set the peer's key on their local address
+    // this.local.setKey(this.address.getKey());
+
+    // if (!this.network.selfConnect) {
+    //   if (this.options.hasNonce(packet.nonce))
+    //     throw new Error('We connected to ourself. Oops.');
+    // }
+
+    // if (this.version < common.MIN_VERSION)
+    //   throw new Error('Peer does not support required protocol version.');
+
+    // if (this.outbound) {
+    //   if (!(this.services & services.NETWORK))
+    //     throw new Error('Peer does not support network services.');
+
+    //   if (this.options.spv) {
+    //     if (!(this.services & services.BLOOM))
+    //       throw new Error('Peer does not support BIP37.');
+    //   }
+    // }
+
+    // this.send(new packets.VerackPacket());
+    // this.logger.info(
+    //   'Received version (%s): version=%d height=%d services=%s agent=%s',
+    //   peer.hostname(),
+    //   packet.version,
+    //   packet.height,
+    //   packet.services.toString(2),
+    //   packet.agent);
+
+    // this.network.time.add(peer.hostname(), packet.time);
+    // this.nonces.remove(peer.hostname());
+
+    // if (!peer.outbound && packet.remote.isRoutable())
+    //   this.hosts.markLocal(packet.remote);
+
+
+
 
     pub async fn init_version(&mut self) -> Result<()> {
         self.send_version().await?;
@@ -131,7 +261,7 @@ impl Peer {
     pub async fn send_version(&mut self) -> Result<()> {
         //Need to pass in height dynamically. TODO
         //Also need to pass in no_relay dynamically TODO
-        let packet = VersionPacket::new(self.info.address, 0, false);
+        let packet = Packet::Version(VersionPacket::new(self.info.address, 0, false));
         //Each packet might have a different timeout requirement -> We should probably set this in
         //the packet struct itself.
         //
@@ -140,6 +270,40 @@ impl Peer {
             .await?;
 
         Ok(())
+    }
+
+    pub async fn send_verack(&mut self) -> Result<()> {
+        let packet = Packet::Verack;
+
+        self.brontide.write(packet.frame(self.network).to_vec()).await?;
+
+        Ok(())
+
+    }
+
+    pub fn is_connected(&self) -> bool {
+            let state = match self.state.read() {
+                Ok(state) => state,
+                Err(_) => return false,
+            };
+
+        State::Connected == *state
+    }
+
+    pub fn is_outbound(&self) -> bool {
+        Direction::Outbound == self.info.direction
+    }
+
+    pub fn set_loader(&self, load: bool) -> Result<()> {
+        let mut loader = match self.loader.write() {
+            Ok(loader) => loader,
+            Err(_) => return Err(Error::LockError),
+        };
+
+        *loader = load;
+
+        Ok(())
+
     }
 
     // pub async fn receive_version(&mut self, packet: Packet::Version) -> Result<()> {
@@ -207,7 +371,8 @@ mod tests {
 
         let mut peer = Peer::connect(peer_address, local_key, Network::Testnet).await.unwrap();
 
-        peer.init_version().await.unwrap();
+        // peer.init_version().await.unwrap();
+        peer.handle_messages().await;
 
         ()
     })
