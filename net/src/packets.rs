@@ -1,9 +1,12 @@
-use crate::common::USER_AGENT;
+use crate::common::{MAX_INV, USER_AGENT};
 use crate::net_address::NetAddress;
 use crate::types::{ProtocolVersion, Services};
 use crate::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use extended_primitives::Buffer;
+use extended_primitives::Uint256;
+use extended_primitives::VarInt;
+use handshake_primitives::Inventory;
 use handshake_protocol::encoding::{Decodable, Encodable};
 use handshake_protocol::network::Network;
 use rand::Rng;
@@ -12,7 +15,10 @@ use rand::Rng;
 pub enum Packet {
     Version(VersionPacket),
     Verack,
-    Ping,
+    Ping(PingPacket),
+    Pong(PongPacket),
+    GetAddr,
+    Unknown(UnknownPacket),
 }
 
 impl Packet {
@@ -50,7 +56,19 @@ impl Packet {
                 Ok(Packet::Version(packet))
             }
             1 => Ok(Packet::Verack),
-            _ => Ok(Packet::Ping),
+            2 => {
+                let packet = PingPacket::decode(raw_packet)?;
+                Ok(Packet::Ping(packet))
+            }
+            3 => {
+                let packet = PongPacket::decode(raw_packet)?;
+                Ok(Packet::Pong(packet))
+            }
+            _ => {
+                //null
+                let packet = UnknownPacket::decode(raw_packet)?;
+                Ok(Packet::Unknown(packet))
+            }
         }
     }
 
@@ -208,5 +226,188 @@ impl Encodable for VersionPacket {
         buffer.write_u8(self.no_relay as u8);
 
         buffer
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PingPacket {
+    _type: PacketType,
+    //TODO probably make this a custom type. -> I think it's the same nonce as hostname.
+    nonce: Uint256,
+}
+
+impl PingPacket {
+    pub fn decode(mut packet: Buffer) -> Result<Self> {
+        //TODO
+        // let nonce = packet.read_bytes(8)?;
+        // let nonce = packet.read_u256()?;
+
+        Ok(PingPacket {
+            _type: PacketType::Ping,
+            nonce: Default::default(),
+        })
+    }
+}
+
+impl Encodable for PingPacket {
+    fn size(&self) -> u32 {
+        8
+    }
+
+    fn encode(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        //TOD switch when we fix nonce.
+        // buffer.write_bytes(self.nonce);
+        buffer.write_u256(self.nonce);
+
+        buffer
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct PongPacket {
+    _type: PacketType,
+    //TODO probably make this a custom type. -> I think it's the same nonce as hostname.
+    nonce: Uint256,
+}
+
+impl PongPacket {
+    pub fn decode(mut packet: Buffer) -> Result<Self> {
+        //TODO
+        // let nonce = packet.read_bytes(8)?;
+        // let nonce = packet.read_u256()?;
+
+        Ok(PongPacket {
+            _type: PacketType::Ping,
+            nonce: Default::default(),
+        })
+    }
+}
+
+impl Encodable for PongPacket {
+    fn size(&self) -> u32 {
+        8
+    }
+
+    fn encode(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        //TOD switch when we fix nonce.
+        // buffer.write_bytes(self.nonce);
+        buffer.write_u256(self.nonce);
+
+        buffer
+    }
+}
+
+pub struct AddrPacket {
+    _type: PacketType,
+    items: Vec<NetAddress>,
+}
+
+impl AddrPacket {
+    pub fn decode(mut packet: Buffer) -> Result<Self> {
+        let count = packet.read_varint()?;
+        //TODO would it be faster to initalize with capacity here? since we know the count.
+        let mut items = Vec::new();
+        for _ in 0..count.to_u64() {
+            items.push(NetAddress::decode(&mut packet)?);
+        }
+
+        Ok(AddrPacket {
+            _type: PacketType::Addr,
+            items,
+        })
+    }
+}
+
+impl Encodable for AddrPacket {
+    fn size(&self) -> u32 {
+        let mut size = 0;
+        let length = VarInt::from(self.items.len() as u64);
+        size += length.encoded_size();
+        let items = self.items.iter();
+        for addr in items {
+            size += addr.size();
+        }
+
+        size
+    }
+
+    fn encode(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_varint(self.items.len());
+        let items = self.items.iter();
+        for item in items {
+            buffer.extend(item.encode());
+        }
+
+        buffer
+    }
+}
+
+pub struct InvPacket {
+    _type: PacketType,
+    items: Vec<Inventory>,
+}
+
+impl InvPacket {
+    pub fn decode(mut packet: Buffer) -> Result<Self> {}
+}
+
+impl Encodable for InvPacket {
+    fn size(&self) -> u32 {
+        let mut size = 0;
+        let length = VarInt::from(self.items.len() as u64);
+        size += length.encoded_size();
+
+        let items = self.items.iter();
+        for item in items {
+            size += item.size();
+        }
+
+        size
+    }
+
+    fn encode(&self) -> Buffer {
+        assert!(self.items.len() < MAX_INV);
+
+        let mut buffer = Buffer::new();
+
+        buffer.write_varint(self.items.len());
+
+        let items = self.items.iter();
+
+        for item in items {
+            buffer.extend(item.encode());
+        }
+
+        buffer
+    }
+}
+
+pub struct UnknownPacket {
+    _type: PacketType,
+    data: Buffer,
+}
+
+impl UnknownPacket {
+    pub fn decode(mut packet: Buffer) -> Result<Self> {
+        Ok(UnknownPacket {
+            _type: PacketType::Unknown,
+            data: packet,
+        })
+    }
+}
+
+impl Encodable for UnknownPacket {
+    fn size(&self) -> u32 {
+        self.data.len() as u32
+    }
+
+    fn encode(&self) -> Buffer {
+        self.data
     }
 }
