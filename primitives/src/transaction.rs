@@ -1,5 +1,5 @@
 use crate::{Input, Output};
-use handshake_types::Hash;
+use extended_primitives::Hash;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Transaction {

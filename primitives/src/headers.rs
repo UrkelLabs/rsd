@@ -4,8 +4,8 @@ use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
 use sp800_185::KMac;
 
+use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_protocol::consensus::consensus_verify_pow;
-use handshake_types::{Buffer, Hash, Uint256};
 
 /// A block header, which contains all the block's information except
 /// the actual transactions

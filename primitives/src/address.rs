@@ -1,4 +1,4 @@
-use handshake_types::Hash;
+use extended_primitives::Hash;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Address {

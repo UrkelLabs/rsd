@@ -1,4 +1,4 @@
-use handshake_types::Hash;
+use extended_primitives::Hash;
 
 //TODO should we impl Odr?
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

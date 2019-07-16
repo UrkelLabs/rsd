@@ -1,5 +1,6 @@
 use crate::Address;
-use handshake_types::{Hash, Name, NameHash, Uint256};
+use extended_primitives::{Hash, Uint256};
+use handshake_types::{Name, NameHash};
 
 /// A Handshake covenant, which is a method of changing name state on the chain.
 #[derive(PartialEq, Eq, Clone, Debug)]
