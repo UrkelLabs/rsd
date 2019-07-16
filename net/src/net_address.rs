@@ -114,6 +114,14 @@ impl NetAddress {
         //like that.
         self.raw.is_valid()
     }
+
+    pub fn is_local(&self) -> bool {
+        self.raw.is_local()
+    }
+
+    pub fn is_reachable(&self) -> bool {
+        self.raw.is_reachable()
+    }
 }
 
 //TODO we have to decide if we want to make Peers unique on
