@@ -4,6 +4,7 @@ use crate::types::{ProtocolVersion, Services};
 use crate::Result;
 use chrono::{DateTime, TimeZone, Utc};
 use extended_primitives::Buffer;
+use extended_primitives::Hash;
 use extended_primitives::Uint256;
 use extended_primitives::VarInt;
 use handshake_primitives::Inventory;
@@ -11,6 +12,8 @@ use handshake_protocol::encoding::{Decodable, Encodable};
 use handshake_protocol::network::Network;
 use rand::Rng;
 
+//TODO I think we might be able to remove packet types from all of these things, but for now keep
+//them.
 #[derive(Debug, PartialEq)]
 pub enum Packet {
     Version(VersionPacket),
@@ -18,6 +21,12 @@ pub enum Packet {
     Ping(PingPacket),
     Pong(PongPacket),
     GetAddr,
+    Addr(AddrPacket),
+    Inv(InvPacket),
+    GetData,
+    NotFound,
+    GetBlocks(GetBlocksPacket),
+
     Unknown(UnknownPacket),
 }
 
@@ -64,8 +73,22 @@ impl Packet {
                 let packet = PongPacket::decode(raw_packet)?;
                 Ok(Packet::Pong(packet))
             }
+            4 => Ok(Packet::GetAddr),
+            5 => {
+                let packet = AddrPacket::decode(raw_packet)?;
+                Ok(Packet::Addr(packet))
+            }
+            6 => {
+                let packet = InvPacket::decode(raw_packet)?;
+                Ok(Packet::Inv(packet))
+            }
+            7 => Ok(Packet::GetData),
+            8 => Ok(Packet::NotFound),
+            9 => {
+                let packet = GetBlocksPacket::decode(raw_packet)?;
+                Ok(Packet::GetBlocks(packet))
+            }
             _ => {
-                //null
                 let packet = UnknownPacket::decode(raw_packet)?;
                 Ok(Packet::Unknown(packet))
             }
@@ -78,6 +101,14 @@ impl Packet {
             Packet::Version(version) => version.encode(),
             //TODO check verack encoding.
             Packet::Verack => Buffer::new(),
+            Packet::Ping(ping) => ping.encode(),
+            Packet::Pong(pong) => pong.encode(),
+            Packet::GetAddr => Buffer::new(),
+            Packet::Addr(addr) => addr.encode(),
+            Packet::Inv(inv) => inv.encode(),
+            Packet::GetData => Buffer::new(),
+            Packet::NotFound => Buffer::new(),
+            Packet::GetBlocks(blocks) => blocks.encode(),
             _ => Buffer::new(),
         }
     }
@@ -301,6 +332,7 @@ impl Encodable for PongPacket {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct AddrPacket {
     _type: PacketType,
     items: Vec<NetAddress>,
@@ -348,13 +380,26 @@ impl Encodable for AddrPacket {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct InvPacket {
     _type: PacketType,
     items: Vec<Inventory>,
 }
 
 impl InvPacket {
-    pub fn decode(mut packet: Buffer) -> Result<Self> {}
+    pub fn decode(mut packet: Buffer) -> Result<Self> {
+        let count = packet.read_varint()?;
+
+        let mut items = Vec::new();
+        for _ in 0..count.to_u64() {
+            items.push(Inventory::decode(&mut packet)?);
+        }
+
+        Ok(InvPacket {
+            _type: PacketType::Inv,
+            items,
+        })
+    }
 }
 
 impl Encodable for InvPacket {
@@ -372,7 +417,7 @@ impl Encodable for InvPacket {
     }
 
     fn encode(&self) -> Buffer {
-        assert!(self.items.len() < MAX_INV);
+        assert!(self.items.len() < MAX_INV as usize);
 
         let mut buffer = Buffer::new();
 
@@ -388,6 +433,67 @@ impl Encodable for InvPacket {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct GetBlocksPacket {
+    _type: PacketType,
+    locator: Vec<Hash>,
+    stop: Hash,
+}
+
+impl GetBlocksPacket {
+    pub fn decode(mut packet: Buffer) -> Result<Self> {
+        let count = packet.read_varint()?;
+
+        //TODO probably catch this error, and destroy the peer.
+        //TODO have count.to_usize, count.to_u32, etc
+        assert!(count.as_u64() <= MAX_INV as u64);
+
+        let mut locator: Vec<Hash> = Vec::new();
+
+        for _ in 0..count.to_u64() {
+            locator.push(packet.read_hash()?);
+        }
+
+        let stop = packet.read_hash()?;
+
+        Ok(GetBlocksPacket {
+            _type: PacketType::GetBlocks,
+            locator,
+            stop,
+        })
+    }
+}
+
+impl Encodable for GetBlocksPacket {
+    fn size(&self) -> u32 {
+        let mut size = 0;
+        let length = VarInt::from(self.locator.len() as u64);
+        size += length.encoded_size();
+        //Each hash is 32 bytes.
+        size += self.locator.len() as u32 * 32;
+        //Stop size
+        size += 32;
+        size
+    }
+
+    fn encode(&self) -> Buffer {
+        assert!(self.locator.len() < MAX_INV as usize);
+
+        let mut buffer = Buffer::new();
+
+        buffer.write_varint(self.locator.len());
+        let items = self.locator.iter();
+        for item in items {
+            buffer.write_hash(*item);
+        }
+
+        buffer.write_hash(self.stop);
+
+        buffer
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct UnknownPacket {
     _type: PacketType,
     data: Buffer,
@@ -408,6 +514,6 @@ impl Encodable for UnknownPacket {
     }
 
     fn encode(&self) -> Buffer {
-        self.data
+        self.data.clone()
     }
 }
