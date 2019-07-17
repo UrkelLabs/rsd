@@ -1,7 +1,7 @@
 use extended_primitives::{Buffer, Hash};
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum InvType {
     Tx = 1,
     Block = 2,
@@ -11,6 +11,7 @@ enum InvType {
     Airdrop = 6,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Inventory {
     _type: InvType,
     hash: Hash,
