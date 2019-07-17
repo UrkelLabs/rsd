@@ -14,7 +14,7 @@ use rand::Rng;
 
 //TODO I think we might be able to remove packet types from all of these things, but for now keep
 //them.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Packet {
     Version(VersionPacket),
     Verack,
@@ -495,7 +495,7 @@ impl Encodable for GetBlocksPacket {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UnknownPacket {
-    _type: PacketType,
+    pub(crate) _type: PacketType,
     data: Buffer,
 }
 

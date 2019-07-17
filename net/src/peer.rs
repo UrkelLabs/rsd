@@ -1,5 +1,7 @@
 use crate::net_address::NetAddress;
-use crate::packets::{Packet, VersionPacket};
+use std::net::SocketAddr;
+use crate::packets::{Packet, VersionPacket, UnknownPacket};
+use log::warn;
 //TODO reimplement when types crate is available.
 use crate::types::{IdentityKey, ProtocolVersion};
 use crate::Result;
@@ -127,13 +129,14 @@ impl Peer {
 
             // queue.push(msg);
             //
-            if let Packet::Version(version) = msg {
+            //TODO ugly, don't want to clone the message here, but can figure this out later.
+            if let Packet::Version(version) = msg.clone() {
                 self.handle_version(version).await?;
                 //TODO actually don't make this an if else, we need to check version is received
                 //BEFORE we even process a verack.
             } else if let Packet::Verack = msg {
                 self.handle_verack().await?;
-            }
+            };
 
             //Check for Verack here, if none, don't proceed -> Build a test to check for p2p
             //leakage. Aka if we are sending or processing other messages without getting a verack
@@ -141,15 +144,19 @@ impl Peer {
 
 
 
-            // match msg {
-            //     Packet::Version(version) => self.handleVersion(version),
-            //     Packet::Verack(verack) => self.handleVerack(verack),
-            //     _ => {},
-
-            // };
+            match msg {
+                Packet::Unknown(unknown) => {
+                    self.handle_unknown(unknown)
+                },
+                _ => unreachable!()
+            };
         }
 
         Ok(())
+    }
+
+    pub fn handle_unknown(&self, msg: UnknownPacket) {
+        warn!("Unknown packet: {} ({}).", msg._type as u32, self.hostname());
     }
 
     pub async fn handle_verack(&self) -> Result<()> {
@@ -304,6 +311,10 @@ impl Peer {
 
         Ok(())
 
+    }
+
+    pub fn hostname(&self) -> SocketAddr {
+        self.info.address.get_socket_addr()
     }
 
     // pub async fn receive_version(&mut self, packet: Packet::Version) -> Result<()> {
