@@ -44,6 +44,10 @@ impl NetAddress {
         key
     }
 
+    pub fn get_socket_addr(&self) -> SocketAddr {
+        self.address
+    }
+
     pub fn get_group(&self) -> Vec<u8> {
         let mut group = Vec::new();
 
@@ -117,10 +121,6 @@ impl NetAddress {
 
     pub fn is_local(&self) -> bool {
         self.raw.is_local()
-    }
-
-    pub fn is_reachable(&self) -> bool {
-        self.raw.is_reachable()
     }
 }
 
