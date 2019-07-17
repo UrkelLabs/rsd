@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use crate::peer_store::PeerStore;
 use crate::NetAddress;
+use handshake_protocol::network::Network;
 
 //TODO cleanup imports
 // use crate::blockchain::chain::Chain;
@@ -24,6 +25,7 @@ pub struct PoolConfig {
 }
 
 //TODO possible name this p2p server.
+//TODO need our max reachable connections.
 #[derive(Clone)]
 pub struct Pool {
     //TODO does this actually need to be an arc?
@@ -108,7 +110,7 @@ impl Pool {
             let start = Time::now();
             let mut attempts: u32 = 0;
             let feeler = false;
-            let address_connect: NetAddress;
+            let mut address_connect: Option<NetAddress> = None;
 
             loop {
                 let mut data_locked = self.store.select_tried_collision().await;
@@ -120,7 +122,9 @@ impl Pool {
                 //Get the lock on the data
                 //TODO remove the unwrap here and put it into a break if statment. Probably if let
                 //statement here.
-                let data = data_locked.unwrap().lock().await;
+                //TODO so ugly, fix this.
+                let data_unwrapped = data_locked.unwrap();
+                let data = data_unwrapped.lock().await;
 
                 //TODO we aren't checking groups right now as how we are returning them is bad.
                 // let connected_groups = self.connected_groups.lock().await;
@@ -137,40 +141,56 @@ impl Pool {
                     break;
                 }
 
-                if !data.address.is_reachable() {
-                    continue;
-                }
+                //TODO needs to impl on pool, not on net address
+                // if !data.address.is_reachable() {
+                //     continue;
+                // }
 
                 if start - data.last_try < 600 && attempts < 30 {
                     continue;
                 }
 
-                if !feeler && !self.has_all_desirable_service_flags(address.services) {
-                    continue;
-                } else if feeler && may_have_useful_address_db(address.services) {
-                    continue;
-                }
+                //TODO these go in protocol
+                // if !feeler && !self.has_all_desirable_service_flags(address.services) {
+                //     continue;
+                // } else if feeler && may_have_useful_address_db(address.services) {
+                //     continue;
+                // }
 
-                if address.get_port() != default_port && attempts < 50 {
-                    continue;
-                }
+                //TODO need default port -> Probably grab from network.
+                // if data.address.port != default_port && attempts < 50 {
+                //     continue;
+                // }
 
-                //TODO rename address in here to data.
-                address_connect = data.address;
+                address_connect = Some(data.address);
                 break;
             };
 
-            if address_connect.is_valid() {
-                if feeler {
-                    //TODO add a random amount of noise before connection to avoid synchronization.
-                    }
+            if address_connect.is_none() {
+                //TODO another loop?
+                break;
+            }
+
+            if address_connect.unwrap().is_valid() {
+                //if feeler {
+                //    //TODO add a random amount of noise before connection to avoid synchronization.
+                //    }
                 //Make the connection to the address probably means new peer.
+                //TODO need to impl key
+                //TODO need to impl network (or remove it from this function)
+                //Might not want to throw the error here, and just continue.
+                juliex::spawn(async move {
+                let peer = Peer::connect(address_connect.unwrap(), [0; 32], Network::Testnet).await.unwrap();
+                    // peer.handle()
+
+                });
             }
 
             //Find a valid address.
             //Open the connection.
             //If successful, then let loop occur.
         }
+        Ok(())
 
         // this.logger.debug('Refilling peers (%d/%d).',
         //   this.peers.outbound,
