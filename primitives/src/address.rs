@@ -1,7 +1,6 @@
 use bech32::u5;
-use extended_primitives::{Buffer, Hash};
+use extended_primitives::{Buffer, BufferError};
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
-use handshake_protocol::network::Network;
 use std::str::FromStr;
 
 //TODO possibly move this to just a file error.
@@ -13,6 +12,7 @@ enum AddressError {
     InvalidHash,
     Decoding(DecodingError),
     Bech32(bech32::Error),
+    Buffer(BufferError),
 }
 
 impl From<DecodingError> for AddressError {
@@ -27,6 +27,12 @@ impl From<bech32::Error> for AddressError {
     }
 }
 
+impl From<BufferError> for AddressError {
+    fn from(e: BufferError) -> Self {
+        AddressError::Buffer(e)
+    }
+}
+
 #[derive(PartialEq, Clone, Debug)]
 enum Payload {
     PubkeyHash(Buffer),
@@ -34,6 +40,20 @@ enum Payload {
 }
 
 impl Payload {
+    fn len(&self) -> usize {
+        match self {
+            Payload::PubkeyHash(hash) => hash.len(),
+            Payload::ScriptHash(hash) => hash.len(),
+        }
+    }
+
+    fn to_hash(self) -> Buffer {
+        match self {
+            Payload::PubkeyHash(hash) => hash,
+            Payload::ScriptHash(hash) => hash,
+        }
+    }
+
     fn from_hash(hash: Buffer) -> Result<Payload, AddressError> {
         match hash.len() {
             20 => Ok(Payload::PubkeyHash(hash)),
@@ -46,9 +66,9 @@ impl Payload {
 #[derive(PartialEq, Clone, Debug)]
 pub struct Address {
     //Can we make this u8? TODO
-    pub version: u32,
+    //And do we even need this?
+    pub version: u8,
     pub hash: Payload,
-    pub network: Network,
 }
 
 impl Address {
@@ -64,66 +84,51 @@ impl Address {
     pub fn is_unspendable(&self) -> bool {
         self.is_null_data()
     }
-
-    //pub fn from_hash(hash: Buffer, version: Option<u8>) -> Result<Address, AddressError> {
-    //    let hash_version = match version {
-    //        Some(version) => version,
-    //        None => 0,
-    //    };
-
-    //    //TODO should we actually wrap all these inside of the payload enum?
-    //    //Then we can reuse for read.
-    //    if hash_version > 31 {
-    //        return Err(AddressError::InvalidAddressVersion);
-    //    } else if hash.len() < 2 || hash.len() > 40 {
-    //        return Err(AddressError::InvalidAddressSize);
-    //    }
-
-    //    //TODO double check logic.
-    //    if hash_version == 0 && !(hash.len() == 20 || hash.len() == 32) {
-    //        return Err(AddressError::InvalidAddressSize);
-    //    }
-
-    //    // this.hash = hash;
-    //    // this.version = version;
-
-    //    // return this;
-    //    // }
-    //}
 }
 
-//    this.hash = hash;
-//    this.version = version;
+impl Decodable for Address {
+    type Error = AddressError;
 
-//    return this;
-//  }
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+        let version = buffer.read_u8()?;
 
-// impl Decodable for Address {
-//     type Error = AddressError;
+        if version > 31 {
+            return Err(AddressError::InvalidAddressVersion);
+        }
 
-//     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
-//         let version = buffer.read_u8()?;
+        let size = buffer.read_u8()?;
 
-//         if version > 31 {
-//             return Err(AddressError::InvalidAddressVersion);
-//         }
+        if size < 2 || size > 40 {
+            return Err(AddressError::InvalidAddressSize);
+        }
 
-//         let size = buffer.read_u8()?;
+        let hash = buffer.read_bytes(size as usize)?;
 
-//         if size < 2 || size > 40 {
-//             return Err(AddressError::InvalidAddressSize);
-//         }
+        let hash = Payload::from_hash(Buffer::from(hash))?;
 
-//         let hash = buffer.read_bytes(size as usize);
-//     }
-// }
-// impl From<String> for Address {
-//     fn from(item: i32) -> Self {
-//         Address { value: item }
-//     }
-// }
-//
-// //TODO from string, eq, partial eq, ordering.
+        Ok(Address {
+            version: version,
+            hash,
+        })
+    }
+}
+
+impl Encodable for Address {
+    fn size(&self) -> u32 {
+        1 + 1 + self.hash.len() as u32
+    }
+
+    fn encode(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_u8(self.version);
+        buffer.write_u8(self.hash.len() as u8);
+        buffer.extend(self.hash.to_hash());
+
+        buffer
+    }
+}
+
 impl FromStr for Address {
     type Err = AddressError;
 
@@ -134,20 +139,13 @@ impl FromStr for Address {
 
         let hash = Payload::from_hash(hash)?;
 
-        let network = match Network::from_bech32_prefix(&hrp) {
-            Some(network) => network,
-            None => return Err(AddressError::InvalidNetworkPrefix),
-        };
-
-        Ok(Address {
-            version,
-            hash,
-            network,
-        })
+        Ok(Address { version, hash })
     }
 }
 
-fn version_hash_from_bech32(data: Vec<u5>) -> (u32, Buffer) {
+// //TODO eq, partial eq, ordering.
+
+fn version_hash_from_bech32(data: Vec<u5>) -> (u8, Buffer) {
     let version = data[0].to_u8();
     let mut hash = Buffer::new();
 
@@ -161,5 +159,5 @@ fn version_hash_from_bech32(data: Vec<u5>) -> (u32, Buffer) {
         hash.write_u8(elem.to_u8());
     }
 
-    (version as u32, hash)
+    (version, hash)
 }
