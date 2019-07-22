@@ -1,24 +1,15 @@
 use bech32::u5;
-use extended_primitives::{Buffer, BufferError};
+use extended_primitives::Buffer;
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 use std::str::FromStr;
 
-//TODO possibly move this to just a file error.
 #[derive(Debug)]
-enum AddressError {
+pub enum AddressError {
     InvalidAddressVersion,
     InvalidAddressSize,
     InvalidNetworkPrefix,
     InvalidHash,
-    Decoding(DecodingError),
     Bech32(bech32::Error),
-    Buffer(BufferError),
-}
-
-impl From<DecodingError> for AddressError {
-    fn from(e: DecodingError) -> Self {
-        AddressError::Decoding(e)
-    }
 }
 
 impl From<bech32::Error> for AddressError {
@@ -27,9 +18,9 @@ impl From<bech32::Error> for AddressError {
     }
 }
 
-impl From<BufferError> for AddressError {
-    fn from(e: BufferError) -> Self {
-        AddressError::Buffer(e)
+impl From<AddressError> for DecodingError {
+    fn from(e: AddressError) -> DecodingError {
+        DecodingError::InvalidData(format!("{:?}", e))
     }
 }
 
@@ -87,19 +78,19 @@ impl Address {
 }
 
 impl Decodable for Address {
-    type Error = AddressError;
+    type Error = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
         let version = buffer.read_u8()?;
 
         if version > 31 {
-            return Err(AddressError::InvalidAddressVersion);
+            return Err(DecodingError::InvalidData("Invalid Address Version".to_string()));
         }
 
         let size = buffer.read_u8()?;
 
         if size < 2 || size > 40 {
-            return Err(AddressError::InvalidAddressSize);
+            return Err(DecodingError::InvalidData("Invalid Address Size".to_string()));
         }
 
         let hash = buffer.read_bytes(size as usize)?;
