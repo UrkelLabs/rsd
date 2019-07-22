@@ -1,34 +1,8 @@
-use crate::address::AddressError;
 use crate::Address;
 use extended_primitives::VarInt;
-use extended_primitives::{Buffer, BufferError, Hash, Uint256};
+use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 use handshake_types::{Name, NameHash};
-
-#[derive(Debug)]
-enum CovenantError {
-    Address(AddressError),
-    Decoding(DecodingError),
-    Buffer(BufferError),
-}
-
-impl From<DecodingError> for CovenantError {
-    fn from(e: DecodingError) -> Self {
-        CovenantError::Decoding(e)
-    }
-}
-
-impl From<AddressError> for CovenantError {
-    fn from(e: AddressError) -> Self {
-        CovenantError::Address(e)
-    }
-}
-
-impl From<BufferError> for CovenantError {
-    fn from(e: BufferError) -> Self {
-        CovenantError::Buffer(e)
-    }
-}
 
 /// A Handshake covenant, which is a method of changing name state on the chain.
 #[derive(PartialEq, Clone, Debug)]
@@ -93,7 +67,7 @@ impl Covenant {
 }
 
 impl Decodable for Covenant {
-    type Error = CovenantError;
+    type Error = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
         let covenant_type = buffer.read_u8()?;
@@ -832,7 +806,7 @@ impl Encodable for TransferCovenant {
 }
 
 impl Decodable for TransferCovenant {
-    type Error = CovenantError;
+    type Error = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
         //4
