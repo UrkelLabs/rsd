@@ -3,8 +3,10 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum DecodingError {
+    //Overall wrapper type to enclose decoding errors.
+    InvalidData(String),
     Buffer(BufferError),
-    UnknownInvetory,
+    UnknownInventory,
 }
 
 impl From<BufferError> for DecodingError {
@@ -16,8 +18,9 @@ impl From<BufferError> for DecodingError {
 impl fmt::Display for DecodingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            DecodingError::InvalidData(ref e) => write!(f, "Invalid Data: {}", e),
             DecodingError::Buffer(ref e) => write!(f, "Buffer Error: {}", e),
-            DecodingError::UnknownInvetory => write!(f, "Unknown Inventory Type"),
+            DecodingError::UnknownInventory => write!(f, "Unknown Inventory Type"),
         }
     }
 }
@@ -28,6 +31,7 @@ pub trait Encodable {
     fn encode(&self) -> Buffer;
 }
 
+//TODO rename type Error to type Err;
 pub trait Decodable
 where
     Self: Sized,
