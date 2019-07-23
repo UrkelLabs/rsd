@@ -12,3 +12,6 @@ sp800-185 = "0.2.0"
 hex = "0.3.2"
 handshake_types = { path="../types" }
 handshake_protocol = { path="../protocol" }
+handshake_script = { path="../script" }
+extended-primitives = { path="../../../UrkelLabs/extended-primitives" }
+bech32 = "0.7.1"
