@@ -29,7 +29,7 @@ impl Encodable for Outpoint {
     }
 
     fn encode(&self) -> Buffer {
-        let buffer = Buffer::new();
+        let mut buffer = Buffer::new();
 
         buffer.write_hash(self.txid);
         buffer.write_u32(self.index);

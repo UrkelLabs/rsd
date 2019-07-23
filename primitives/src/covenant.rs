@@ -118,6 +118,9 @@ impl Decodable for Covenant {
                 let covenant = RevokeCovenant::decode(buffer)?;
                 Ok(Covenant::Revoke(covenant))
             }
+            _ => Err(DecodingError::InvalidData(
+                "Unknown Covenant Type".to_owned(),
+            )),
         }
     }
 }

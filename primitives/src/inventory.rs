@@ -78,7 +78,7 @@ impl Decodable for Inventory {
             4 => InvType::CompactBlock,
             5 => InvType::Claim,
             6 => InvType::Airdrop,
-            _ => return Err(DecodingError::UnknownInvetory),
+            _ => return Err(DecodingError::UnknownInventory),
         };
         let hash = buffer.read_hash()?;
 

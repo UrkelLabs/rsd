@@ -41,7 +41,7 @@ impl Decodable for Block {
         let header = BlockHeader::decode(buffer)?;
 
         let count = buffer.read_varint()?;
-        let txdata = Vec::new();
+        let mut txdata = Vec::new();
 
         for _ in 0..count.as_u64() {
             txdata.push(Transaction::decode(buffer)?);

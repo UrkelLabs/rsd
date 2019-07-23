@@ -23,7 +23,7 @@ impl Encodable for Output {
     }
 
     fn encode(&self) -> Buffer {
-        let buffer = Buffer::new();
+        let mut buffer = Buffer::new();
 
         buffer.write_u64(self.value.as_doos());
         buffer.extend(self.address.encode());

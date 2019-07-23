@@ -25,7 +25,7 @@ impl From<AddressError> for DecodingError {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-enum Payload {
+pub enum Payload {
     PubkeyHash(Buffer),
     ScriptHash(Buffer),
 }
@@ -39,6 +39,13 @@ impl Payload {
     }
 
     fn to_hash(self) -> Buffer {
+        match self {
+            Payload::PubkeyHash(hash) => hash,
+            Payload::ScriptHash(hash) => hash,
+        }
+    }
+
+    fn as_hash(&self) -> &Buffer {
         match self {
             Payload::PubkeyHash(hash) => hash,
             Payload::ScriptHash(hash) => hash,
@@ -84,13 +91,17 @@ impl Decodable for Address {
         let version = buffer.read_u8()?;
 
         if version > 31 {
-            return Err(DecodingError::InvalidData("Invalid Address Version".to_string()));
+            return Err(DecodingError::InvalidData(
+                "Invalid Address Version".to_string(),
+            ));
         }
 
         let size = buffer.read_u8()?;
 
         if size < 2 || size > 40 {
-            return Err(DecodingError::InvalidData("Invalid Address Size".to_string()));
+            return Err(DecodingError::InvalidData(
+                "Invalid Address Size".to_string(),
+            ));
         }
 
         let hash = buffer.read_bytes(size as usize)?;
@@ -114,7 +125,8 @@ impl Encodable for Address {
 
         buffer.write_u8(self.version);
         buffer.write_u8(self.hash.len() as u8);
-        buffer.extend(self.hash.to_hash());
+        //TODO fix this
+        buffer.extend(self.hash.as_hash().clone());
 
         buffer
     }

@@ -48,7 +48,7 @@ impl Encodable for Transaction {
 
         for input in self.inputs.iter() {
             //Probably not the most efficient way to do this, TODO review this code.
-            if let Some(witness) = input.witness {
+            if let Some(witness) = &input.witness {
                 buffer.extend(witness.encode());
             }
         }
