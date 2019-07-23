@@ -1,14 +1,13 @@
 use crate::Outpoint;
 use extended_primitives::Buffer;
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_script::Witness;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Input {
     pub prevout: Outpoint,
     pub sequence: u32,
-    ////TODO this should probably be a custom type, but can be implemented later.
-    //TODO should be custom type, and also an option.
-    //pub witness: Vec<Vec<u8>>,
+    pub witness: Option<Witness>,
 }
 
 impl Encodable for Input {
@@ -34,6 +33,10 @@ impl Decodable for Input {
         let prevout = Outpoint::decode(buffer)?;
         let sequence = buffer.read_u32()?;
 
-        Ok(Input { prevout, sequence })
+        Ok(Input {
+            prevout,
+            sequence,
+            witness: None,
+        })
     }
 }
