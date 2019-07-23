@@ -1,4 +1,5 @@
 pub mod address;
+pub mod block;
 pub mod covenant;
 pub mod headers;
 pub mod input;
@@ -8,6 +9,7 @@ pub mod output;
 pub mod transaction;
 
 pub use crate::address::Address;
+pub use crate::block::Block;
 pub use crate::covenant::Covenant;
 pub use crate::headers::BlockHeader;
 pub use crate::input::Input;
