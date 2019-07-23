@@ -6,11 +6,12 @@ use sp800_185::KMac;
 
 use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_protocol::consensus::consensus_verify_pow;
+use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
 // #[derive(Copy, PartialEq, Eq, Clone, Debug)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct BlockHeader {
     /// The protocol version.
     pub version: u32,
@@ -27,6 +28,7 @@ pub struct BlockHeader {
     /// A root reserved for future implementation of Neutrino on the protocol level
     pub reserved_root: Hash,
     /// The timestamp of the block, as claimed by the miner
+    /// //TODO change this to our internal time type.
     pub time: u64,
     /// The target value below which the blockhash must lie, encoded as a
     /// a float (with well-defined rounding, of course)
@@ -117,6 +119,61 @@ impl BlockHeader {
         buffer.write_u256(self.nonce);
 
         buffer.to_hex()
+    }
+}
+
+impl Encodable for BlockHeader {
+    fn size(&self) -> u32 {
+        //Put this into consensus TODO
+        240
+    }
+
+    fn encode(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_u32(self.version);
+        buffer.write_hash(self.prev_blockhash);
+        buffer.write_hash(self.merkle_root);
+        buffer.write_hash(self.witness_root);
+        buffer.write_hash(self.tree_root);
+        buffer.write_hash(self.filter_root);
+        buffer.write_hash(self.reserved_root);
+        buffer.write_u64(self.time);
+        //This will switch to write_compact when we convert the type TODO
+        buffer.write_u32(self.bits);
+        buffer.write_u256(self.nonce);
+
+        buffer
+    }
+}
+
+impl Decodable for BlockHeader {
+    type Error = DecodingError;
+
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+        let version = buffer.read_u32()?;
+        let prev_blockhash = buffer.read_hash()?;
+        let merkle_root = buffer.read_hash()?;
+        let witness_root = buffer.read_hash()?;
+        let tree_root = buffer.read_hash()?;
+        let filter_root = buffer.read_hash()?;
+        let reserved_root = buffer.read_hash()?;
+        let time = buffer.read_u64()?;
+        let bits = buffer.read_u32()?;
+        let nonce = buffer.read_u256()?;
+
+        Ok(BlockHeader {
+            version,
+            prev_blockhash,
+            merkle_root,
+            witness_root,
+            tree_root,
+            filter_root,
+            reserved_root,
+            time,
+            bits,
+            nonce,
+        })
     }
 }
 
