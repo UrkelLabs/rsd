@@ -1,8 +1,5 @@
 use crate::net_address::NetAddress;
-use crate::packets::{
-    AddrPacket, GetBlocksPacket, InvPacket, Packet, PingPacket, PongPacket, UnknownPacket,
-    VersionPacket,
-};
+use crate::packets::{Packet, PingPacket, PongPacket, VersionPacket};
 use handshake_types::Time;
 use log::warn;
 use std::net::SocketAddr;
@@ -91,6 +88,7 @@ pub struct Peer {
     //ARC
     pub tx: Mutex<UnboundedSender<Packet>>,
     pub ping_stats: Mutex<PingStats>,
+    pub prefer_headers: Mutex<bool>,
     // // set of all hashes known to this peer (so no need to send)
     // tracking_adapter: TrackingAdapter,
     // tracker: Arc<conn::Tracker>,
@@ -159,6 +157,7 @@ impl Peer {
             state,
             tx: Mutex::new(tx),
             ping_stats: Mutex::new(ping_stats),
+            prefer_headers: Mutex::new(false),
         })
     }
 
@@ -198,10 +197,11 @@ impl Peer {
             }
 
             match &msg {
-                //TODO ping, pong, sendheaders, filterload, filteradd, filterclear, feefilter,
+                //TODO filterload, filteradd, filterclear, feefilter,
                 //sendcompact
                 Packet::Ping(ping) => self.handle_ping(ping).await?,
                 Packet::Pong(pong) => self.handle_pong(pong).await?,
+                Packet::SendHeaders => self.handle_send_headers().await?,
                 //Remaining packets, do nothing. They are sent to the pool.
                 _ => {}
             };
@@ -311,6 +311,22 @@ impl Peer {
 
         Ok(())
     }
+
+    pub async fn handle_send_headers(&self) -> Result<()> {
+        //Acquire send headers lock.
+        let prefer_headers = self.prefer_headers.lock().await;
+
+        if *prefer_headers {
+            // info!("Peer sent a duplicate sendheaders {}", self.info.address);
+            return Ok(());
+        };
+
+        *prefer_headers = true;
+
+        Ok(())
+    }
+
+    // this.preferHeaders = true;
 
     // if (!this.network.selfConnect) {
     //   if (this.options.hasNonce(packet.nonce))
