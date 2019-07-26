@@ -5,6 +5,7 @@ use pds::BloomFilter;
 //Expose the filter flags, as well as encoding and decoding here.
 //
 //TODO revamp doc comments
+#[derive(Copy, Clone)]
 pub enum BloomFlags {
     // Don't update filter w/ outpoints.
     None = 0,
@@ -14,11 +15,24 @@ pub enum BloomFlags {
     PubKeyOnly = 2,
 }
 
+impl BloomFlags {
+    fn from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(BloomFlags::None),
+            1 => Some(BloomFlags::All),
+            2 => Some(BloomFlags::PubKeyOnly),
+            _ => None,
+        }
+    }
+}
+
 pub struct Bloom {
     //TODO pub here?
     pub filter: BloomFilter,
     pub flag: BloomFlags,
 }
+
+//TODO wrap all functions from BloomFilter
 
 impl Encodable for Bloom {
     //TODO really need to double check this.
@@ -43,13 +57,27 @@ impl Encodable for Bloom {
     }
 }
 
-//TODO need to expose Bloom_filter from new w/ Filter.
-// impl Decodable for Bloom {
-//     type Error = DecodingError;
+impl Decodable for Bloom {
+    type Error = DecodingError;
 
-//     fn decode(&mut buffer: Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+        let filter = buffer.read_var_bytes()?;
 
-//         let filter
+        let n = buffer.read_u32()?;
+        let tweak = buffer.read_u32()?;
+        let flag = buffer.read_u8()?;
 
-//     }
-// }
+        let bloom_filter = BloomFilter::new_with_filter(filter, n, tweak);
+
+        if let Some(flag) = BloomFlags::from_u8(flag) {
+            Ok(Bloom {
+                filter: bloom_filter,
+                flag,
+            })
+        } else {
+            Err(DecodingError::InvalidData(
+                "Invalid Bloom Filter Flag".to_owned(),
+            ))
+        }
+    }
+}
