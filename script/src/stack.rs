@@ -1,6 +1,7 @@
 // use std::iter::Iterator;
 use std::ops;
 
+#[derive(Clone, PartialEq, Debug)]
 pub struct Stack<T> {
     items: Vec<T>,
 }
