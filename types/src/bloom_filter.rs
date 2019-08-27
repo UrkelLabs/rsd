@@ -5,7 +5,7 @@ use pds::BloomFilter;
 //Expose the filter flags, as well as encoding and decoding here.
 //
 //TODO revamp doc comments
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum BloomFlags {
     // Don't update filter w/ outpoints.
     None = 0,
@@ -26,6 +26,7 @@ impl BloomFlags {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Bloom {
     //TODO pub here?
     pub filter: BloomFilter,
