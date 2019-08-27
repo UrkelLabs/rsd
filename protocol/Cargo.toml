@@ -1,11 +1,12 @@
 [package]
-name = "handshake_protocol"
+name = "handshake-protocol"
 version = "0.1.0"
-authors = ["kilpatty <seanpkilgarriff@gmail.com>"]
+authors = ["kilpatty <sean@urkel.io>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-handshake_types = { path="../types" }
+
+# Known External
+extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
+
 
