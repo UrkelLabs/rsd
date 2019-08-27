@@ -2,6 +2,7 @@ use crate::Stack;
 use extended_primitives::Buffer;
 use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 
+#[derive(Clone, PartialEq, Debug)]
 pub struct Witness {
     //TODO probably not u8
     stack: Stack<Buffer>,
