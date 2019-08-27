@@ -3,7 +3,7 @@ use std::cmp;
 use std::ops;
 
 //TODO I think Eq impls Partial Eq and for Ord same thing. remoe if so.
-#[derive(Copy, Debug, Clone, Default)]
+#[derive(Copy, Debug, Clone, Default, Eq, Ord)]
 pub struct Time(u64);
 
 //Time in Seconds
