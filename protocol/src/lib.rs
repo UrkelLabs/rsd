@@ -1,3 +1,4 @@
 pub mod consensus;
-pub mod network;
 pub mod encoding;
+pub mod genesis;
+pub mod network;

@@ -25,6 +25,7 @@ impl fmt::Display for DecodingError {
     }
 }
 
+//TODO return usize here instead of u32.
 pub trait Encodable {
     fn size(&self) -> u32;
 
