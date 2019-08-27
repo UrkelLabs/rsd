@@ -1,0 +1,10 @@
+[package]
+name = "handshake-store"
+version = "0.1.0"
+authors = ["kilpatty <sean@urkel.io>"]
+edition = "2018"
+
+[dependencies]
+
+# Unknown External
+futures-timer = "0.1"
