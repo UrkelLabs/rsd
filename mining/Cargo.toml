@@ -1,8 +1,10 @@
 [package]
-name = "mining"
+name = "handshake-mining"
 version = "0.1.0"
-authors = ["kilpatty <seanpkilgarriff@gmail.com>"]
+authors = ["kilpatty <sean@urkel.io>"]
 edition = "2018"
 
 [dependencies]
-handshake_primitives = { path="../primitives" }
+
+# Internal
+handshake-primitives = { path="../primitives" }
