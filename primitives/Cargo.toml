@@ -13,5 +13,5 @@ hex = "0.3.2"
 handshake_types = { path="../types" }
 handshake_protocol = { path="../protocol" }
 handshake_script = { path="../script" }
-extended-primitives = { path="../../../UrkelLabs/extended-primitives" }
+extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
 bech32 = "0.7.1"
