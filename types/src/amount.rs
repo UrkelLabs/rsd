@@ -119,8 +119,9 @@ impl Amount {
         Amount(dollary_doo)
     }
 
+    // TODO change all other "doo" to doos
     /// Get the number of satoshis in this [Amount].
-    pub fn as_doo(self) -> u64 {
+    pub fn as_doos(self) -> u64 {
         self.0
     }
 
@@ -246,7 +247,7 @@ impl Amount {
     ///
     /// Please be aware of the risk of using floating-point numbers.
     pub fn to_float_in(&self, denom: Denomination) -> f64 {
-        (self.as_doo() as f64) * 10_f64.powi(denom.precision() as i32)
+        (self.as_doos() as f64) * 10_f64.powi(denom.precision() as i32)
     }
 
     /// Express this [Amount] as a floating-point value in Bitcoin.
@@ -276,7 +277,7 @@ impl Amount {
         if denom.precision() > 0 {
             // add zeroes in the end
             let width = denom.precision() as usize;
-            write!(f, "{}{:0width$}", self.as_doo(), 0, width = width)?;
+            write!(f, "{}{:0width$}", self.as_doos(), 0, width = width)?;
         // } else if denom.precision() < 0 {
         //     // need to inject a comma in the number
 
@@ -300,7 +301,7 @@ impl Amount {
         //     }
         } else {
             // denom.precision() == 0
-            write!(f, "{}", self.as_doo())?;
+            write!(f, "{}", self.as_doos())?;
         }
         Ok(())
     }
