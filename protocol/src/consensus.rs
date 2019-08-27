@@ -1,4 +1,4 @@
-use handshake_types::{Hash, Uint256};
+use extended_primitives::{Hash, Uint256};
 use std::result::Result;
 
 pub fn max_coin() -> u64 {
