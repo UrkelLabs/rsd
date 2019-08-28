@@ -1,5 +1,5 @@
-use crate::types::Hash;
-use crate::Transaction;
+use extended_primitives::Hash;
+use handshake_primitives::Transaction;
 // this.prevBlock = consensus.ZERO_HASH;
 //     this.version = 1;
 //     this.height = 0;
