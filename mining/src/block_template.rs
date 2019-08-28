@@ -70,11 +70,8 @@ pub struct BlockTemplate {
 }
 
 impl BlockTemplate {
-
     //Make Value a custom type here...
     pub fn get_reward(&self) -> u64 {
-
+        0
     }
-
-
 }
