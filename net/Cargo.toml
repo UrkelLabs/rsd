@@ -22,7 +22,7 @@ hex = "0.3.2"
 bitflags = "1.1.0"
 romio = "0.3.0-alpha.8"
 #Remove this and move to dev, if we don't use async/await in the net lib. Otherwise make this optional like we do w/ brontide
-futures-preview = {version="=0.3.0-alpha.16", features = ["async-await", "nightly"] }
+futures-preview = {version="=0.3.0-alpha.18", features = ["async-await", "nightly"] }
 rand = "0.7"
 log = "0.4"
 fasthash = "0.4"
