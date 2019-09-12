@@ -1,73 +1,58 @@
-use extended_primitives::Hash;
+use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_primitives::Transaction;
-// this.prevBlock = consensus.ZERO_HASH;
-//     this.version = 1;
-//     this.height = 0;
-//     this.time = 0;
-//     this.bits = 0;
-//     this.target = consensus.ZERO_HASH;
-//     this.mtp = 0;
-//     this.flags = 0;
-//     this.coinbaseFlags = DUMMY;
-//     this.address = new Address();
-//     this.sigops = 400;
-//     this.weight = 4000;
-//     this.opens = 0;
-//     this.updates = 0;
-//     this.renewals = 0;
-//     this.interval = 170000;
-//     this.fees = 0;
-//     this.tree = new MerkleTree();
-//     this.merkleRoot = consensus.ZERO_HASH;
-//     this.treeRoot = consensus.ZERO_HASH;
-//     this.filterRoot = consensus.ZERO_HASH;
-//     this.reservedRoot = consensus.ZERO_HASH;
-//     this.left = DUMMY;
-//     this.right = DUMMY;
-//     this.items = [];
-//     this.claims = [];
-//     this.airdrops = [];
+use handshake_types::{MerkleTree, Time};
 
+//@todo move this to Handshake primitives - Is for better organizational structure.
 pub struct BlockTemplate {
     /// Version
     pub version: u32,
-    /// The hash of previous block
-    pub previous_header_hash: Hash,
-    pub tree_root: Hash,
-    pub reserved_root: Hash,
-    /// The current time as seen by the server
-    // We use u64 in blocks, double check this TODO
-    pub time: u64,
-    pub median_time: u64,
-
+    pub time: Time,
+    /// Block height
+    pub height: u32,
+    // /// The compressed difficulty
+    // TODO convert back to Compact type, but use u32 for now.
+    pub bits: u32,
+    pub target: Uint256,
+    pub median_time: Time,
+    pub flags: u32,
     //TODO see: https://github.com/handshake-org/hsd/blob/master/lib/blockchain/chain.js#L3480
     // pub flags:
     // To show who the block is mined by: eg. "Mined by Bitamin" see: https://github.com/handshake-org/hsd/blob/master/lib/mining/miner.js#L472
     // Should default to "mined by RSD" TODO
     pub coinbase_flags: String,
-    // /// The compressed difficulty
-    // TODO convert back to Compact type, but use u32 for now.
-    pub bits: u32,
-    /// Block height
-    pub height: u32,
-
-    //Halvening interval - Should probably default to this don't know if we need to it in memory,
-    //TODO Need to implement protocol constants.
-    pub interval: u32,
-
     pub address: Hash,
-    /// Block transactions (excluding coinbase)
-    pub transactions: Vec<Transaction>,
-    /// Total funds available for the coinbase (in Satoshis)
-    pub coinbase_value: u64,
-    //TODO figure out if all of these are needed or not.
-    // /// Number of bytes allowed in the block
-    pub size_limit: u32,
     // /// Number of sigops allowed in the block
     pub sigop_limit: u32,
     pub weight_limit: u32,
-    //TODO need open limits, bid limits, airdrop limits etc.
+    pub opens: u32,
+    pub updates: u32,
+    pub renewals: u32,
+    //@todo should probably come from network constants.
+    pub interval: u32,
+    //@todo Probably move to Amount type.
+    pub fees: u32,
+    pub tree: MerkleTree,
+    //@todo these will all be semi-switch in new pow.
+    pub previous_header_hash: Hash,
+    pub tree_root: Hash,
+    pub filter_root: Hash,
+    pub reserved_root: Hash,
+    pub right: Buffer,
+    pub left: Buffer,
+    //@todo remove this for new pow.
+    pub transactions: Vec<Transaction>,
+    //@todo need airdrop claim (sp)?
+    // pub claims: Vec<AirdropClaim>,
+    //@todo need airdrop proof type.
+    // pub airdrops: Vec<AirdropProof>,
 }
+
+//@todo maybe include.
+///// Total funds available for the coinbase (in Satoshis)
+//pub coinbase_value: u64,
+////TODO figure out if all of these are needed or not.
+//// /// Number of bytes allowed in the block
+//pub size_limit: u32,
 
 impl BlockTemplate {
     //Make Value a custom type here...

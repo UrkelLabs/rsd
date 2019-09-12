@@ -8,6 +8,7 @@ edition = "2018"
 
 # Internal
 handshake-primitives = { path="../primitives" }
+handshake-types = { path="../types" }
 
 # Known External
 extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
