@@ -1,5 +1,5 @@
+use crate::Transaction;
 use extended_primitives::{Buffer, Hash, Uint256};
-use handshake_primitives::Transaction;
 use handshake_types::{MerkleTree, Time};
 
 //@todo move this to Handshake primitives - Is for better organizational structure.
