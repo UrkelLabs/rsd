@@ -213,8 +213,6 @@ pub enum Opcode {
 
     // More Ops
     OP_TYPE = 0xd0,
-    OP_CHECKOUTPUT = 0xd1,
-    OP_CHECKOUTPUTVERIFY = 0xd2,
 
     // Custom
     OP_INVALIDOPCODE = 0xff,
