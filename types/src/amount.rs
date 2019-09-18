@@ -114,12 +114,11 @@ impl Amount {
     /// Exactly one bitcoin.
     pub const ONE_HNS: Amount = Amount(1_000_000);
 
-    /// Create an [Amount] with satoshi precision and the given number of satoshis.
-    pub fn from_doo(dollary_doo: u64) -> Amount {
+    /// Create an [Amount] with dollary doo precision and the given number of dollary doos.
+    pub fn from_doos(dollary_doo: u64) -> Amount {
         Amount(dollary_doo)
     }
 
-    // TODO change all other "doo" to doos
     /// Get the number of satoshis in this [Amount].
     pub fn as_doos(self) -> u64 {
         self.0
