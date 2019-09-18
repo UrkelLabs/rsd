@@ -36,5 +36,5 @@ where
     Self: Sized,
 {
     type Err;
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error>;
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err>;
 }
