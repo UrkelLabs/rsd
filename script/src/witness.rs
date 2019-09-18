@@ -1,6 +1,6 @@
 use crate::Stack;
 use extended_primitives::Buffer;
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Witness {
@@ -10,7 +10,7 @@ pub struct Witness {
 
 impl Encodable for Witness {
     //Does not include the varint of total items on the stack.
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         //TODO
         32
     }
@@ -31,9 +31,9 @@ impl Encodable for Witness {
 }
 
 impl Decodable for Witness {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let count = buffer.read_varint()?;
 
         //if count.as_u64() > consensus.max_script_stack() {

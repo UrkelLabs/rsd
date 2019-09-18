@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 
 # Internal
-handshake-protocol = { path="../protocol" }
+handshake-encoding = { path="../encoding" }
 
 #Known External
 extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
