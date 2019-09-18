@@ -1,8 +1,8 @@
 use extended_primitives::{Buffer, Hash};
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 //TODO should we impl Odr?
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Outpoint {
     txid: Hash,
     index: u32,
@@ -23,7 +23,7 @@ impl Outpoint {
 }
 
 impl Encodable for Outpoint {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         //32 (txid) + 4 (index)
         36
     }
@@ -41,10 +41,23 @@ impl Encodable for Outpoint {
 impl Decodable for Outpoint {
     type Error = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let txid = buffer.read_hash()?;
         let index = buffer.read_u32()?;
 
         Ok(Outpoint { txid, index })
     }
 }
+
+impl fmt::Display for Outpoint {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<Outpoint: {}/{}>", self.txid, self.index))
+    }
+}
+
+impl fmt::Debug for Outpoint {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<Outpoint: {}/{}>", self.txid, self.index))
+    }
+}
+
