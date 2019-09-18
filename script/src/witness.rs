@@ -1,6 +1,13 @@
 use crate::Stack;
-use extended_primitives::Buffer;
+use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
+
+//@todo fromStr
+//@todo toString
+//@todo Display and Debug manual
+//@todo json serialization
+//@todo consider moving witness to primitives
+//@todo actually consider moving the entire script package to primitives.
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Witness {
@@ -11,8 +18,14 @@ pub struct Witness {
 impl Encodable for Witness {
     //Does not include the varint of total items on the stack.
     fn size(&self) -> usize {
-        //TODO
-        32
+        let mut size = 0;
+
+        for item in self.stack.iter() {
+            let varint = VarInt::from(item.len());
+            size += varint.encoded_size() as usize + item.len();
+        }
+
+        size
     }
 
     fn encode(&self) -> Buffer {
