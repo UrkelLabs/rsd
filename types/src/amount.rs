@@ -224,7 +224,7 @@ impl Amount {
         // if negative {
         //     value *= -1;
         // }
-        Ok(Amount::from_doo(value))
+        Ok(Amount::from_doos(value))
     }
 
     /// Parses amounts with denomination suffix like they are produced with
