@@ -1,0 +1,11 @@
+[package]
+name = "handshake-encoding"
+version = "0.1.0"
+authors = ["kilpatty <sean@urkel.io>"]
+edition = "2018"
+
+[dependencies]
+
+# Known External
+extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
+

@@ -25,18 +25,16 @@ impl fmt::Display for DecodingError {
     }
 }
 
-//TODO return usize here instead of u32.
 pub trait Encodable {
-    fn size(&self) -> u32;
+    fn size(&self) -> usize;
 
     fn encode(&self) -> Buffer;
 }
 
-//TODO rename type Error to type Err;
 pub trait Decodable
 where
     Self: Sized,
 {
-    type Error;
+    type Err;
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error>;
 }
