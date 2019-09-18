@@ -1,8 +1,26 @@
 use extended_primitives::{Hash, Uint256};
+use handshake_types::Amount;
 use std::result::Result;
 
-pub fn max_coin() -> u64 {
-    2_040_000_000_000_000
+pub const BASE_REWARD: u32 = 2_000;
+
+pub fn max_coin() -> Amount {
+    Amount::from_doos(2_040_000_000_000_000)
+}
+
+pub fn get_reward(height: u32, interval: u32) -> Amount {
+    //@todo test this at max bounds to double check these casts.
+    let halvings = (height as f32 / interval as f32).floor() as u32;
+
+    if halvings >= 53 {
+        return Amount::ZERO;
+    }
+
+    let exponent = 2u32.pow(halvings);
+
+    let amount = (BASE_REWARD as f32 / exponent as f32).floor() * 1_000f32;
+
+    Amount::from_doos(amount as u64)
 }
 
 //Make this a compact type. TODO
