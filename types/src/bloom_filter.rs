@@ -1,5 +1,5 @@
 use extended_primitives::{Buffer, VarInt};
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use pds::BloomFilter;
 
 //Expose the filter flags, as well as encoding and decoding here.
@@ -37,11 +37,11 @@ pub struct Bloom {
 
 impl Encodable for Bloom {
     //TODO really need to double check this.
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let length = VarInt::from(self.filter.filter.len() as u64);
-        size += length.encoded_size();
-        size += self.filter.filter.len() as u32;
+        size += length.encoded_size() as usize;
+        size += self.filter.filter.len();
         size += 9;
         size
     }
@@ -59,9 +59,9 @@ impl Encodable for Bloom {
 }
 
 impl Decodable for Bloom {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let filter = buffer.read_var_bytes()?;
 
         let n = buffer.read_u32()?;

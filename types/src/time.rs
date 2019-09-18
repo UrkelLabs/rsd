@@ -1,6 +1,6 @@
 use chrono::Utc;
 use extended_primitives::Buffer;
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use std::cmp;
 use std::ops;
 
@@ -82,7 +82,7 @@ impl cmp::PartialOrd for Time {
 //TODO impl From Datetime, SystemTime, Duration, and u64
 //
 impl Encodable for Time {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         8
     }
 
@@ -96,9 +96,9 @@ impl Encodable for Time {
 }
 
 impl Decodable for Time {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let inner = buffer.read_u64()?;
 
         Ok(Self(inner))
