@@ -1,5 +1,6 @@
 use extended_primitives::{Buffer, Hash};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
+use std::fmt;
 
 //TODO should we impl Odr?
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -39,7 +40,7 @@ impl Encodable for Outpoint {
 }
 
 impl Decodable for Outpoint {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let txid = buffer.read_hash()?;
@@ -49,15 +50,19 @@ impl Decodable for Outpoint {
     }
 }
 
+//@todo Testing
+//@todo test compare and Ord - ensure it matches hsd
+//@todo JSON Serialization
+//@todo impl From<TX>
+
 impl fmt::Display for Outpoint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<Outpoint: {}/{}>", self.txid, self.index))
+        write!(f, "<Outpoint: {}/{}>", self.txid, self.index)
     }
 }
 
 impl fmt::Debug for Outpoint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<Outpoint: {}/{}>", self.txid, self.index))
+        write!(f, "<Outpoint: {}/{}>", self.txid, self.index)
     }
 }
-
