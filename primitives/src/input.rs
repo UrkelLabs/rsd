@@ -49,9 +49,9 @@ impl Encodable for Input {
 }
 
 impl Decodable for Input {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let prevout = Outpoint::decode(buffer)?;
         let sequence = buffer.read_u32()?;
 
