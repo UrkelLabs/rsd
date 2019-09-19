@@ -26,7 +26,7 @@ impl Input {
 
         Input {
             sequence,
-            witness: None,
+            witness,
             prevout,
         }
     }
