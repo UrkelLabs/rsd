@@ -6,6 +6,8 @@ pub struct Stack<T> {
     items: Vec<T>,
 }
 
+//@todo probably just make this all Buffer?
+
 impl<T> Stack<T> {
     pub fn new() -> Self {
         Stack { items: Vec::new() }
@@ -15,9 +17,20 @@ impl<T> Stack<T> {
         self.items.len()
     }
 
-    //TODO probably should be inline, all of these here should be.
+    //@todo probably should be inline, all of these here should be.
     pub fn push(&mut self, item: T) {
         self.items.push(item)
+    }
+
+    pub fn set(&mut self, index: usize, item: T) {
+        //@todo necessary?
+        // if (index < 0)
+        //   index += this.items.length;
+
+        //@todo should this be an assert or Result?.
+        assert!(index <= self.items.len());
+
+        self.items[index] = item;
     }
 }
 

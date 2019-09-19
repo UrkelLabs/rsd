@@ -11,8 +11,23 @@ use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Witness {
-    //TODO probably not u8
-    stack: Stack<Buffer>,
+    pub stack: Stack<Buffer>,
+}
+
+impl Witness {
+    pub fn new() -> Self {
+        Witness {
+            stack: Stack::new(),
+        }
+    }
+
+    pub fn push_data(&mut self, data: Buffer) {
+        self.stack.push(data);
+    }
+
+    pub fn set_data(&mut self, index: usize, data: Buffer) {
+        self.stack.set(index, data);
+    }
 }
 
 impl Encodable for Witness {
