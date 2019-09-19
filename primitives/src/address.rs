@@ -1,6 +1,6 @@
 use bech32::u5;
 use extended_primitives::Buffer;
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -85,9 +85,9 @@ impl Address {
 }
 
 impl Decodable for Address {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let version = buffer.read_u8()?;
 
         if version > 31 {
@@ -116,8 +116,8 @@ impl Decodable for Address {
 }
 
 impl Encodable for Address {
-    fn size(&self) -> u32 {
-        1 + 1 + self.hash.len() as u32
+    fn size(&self) -> usize {
+        1 + 1 + self.hash.len()
     }
 
     fn encode(&self) -> Buffer {
