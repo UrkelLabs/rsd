@@ -19,3 +19,23 @@ pub use crate::inventory::Inventory;
 pub use crate::outpoint::Outpoint;
 pub use crate::output::Output;
 pub use crate::transaction::Transaction;
+
+//@todo we are starting to get a few too many primitives in here, so I think this calls for some
+//structuring.
+//
+//My initial thoughts:
+//block
+//  -> Block
+//  -> Block Header
+//  -> Block Template
+//transaction or tx
+//  -> Covenant
+//  -> Input
+//  -> Outpoint
+//  -> Output
+//  -> Transaction
+//airdrop
+//  -> AirdropClaim
+//  -> AirdropProof
+//
+//  @todo Covenant should be it's own folder and have a file for each type.
