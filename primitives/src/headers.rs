@@ -5,8 +5,8 @@ use cryptoxide::digest::Digest;
 use sp800_185::KMac;
 
 use extended_primitives::{Buffer, Hash, Uint256};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_protocol::consensus::consensus_verify_pow;
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
@@ -123,7 +123,7 @@ impl BlockHeader {
 }
 
 impl Encodable for BlockHeader {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         //Put this into consensus TODO
         240
     }
@@ -148,9 +148,9 @@ impl Encodable for BlockHeader {
 }
 
 impl Decodable for BlockHeader {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let version = buffer.read_u32()?;
         let prev_blockhash = buffer.read_hash()?;
         let merkle_root = buffer.read_hash()?;
@@ -308,7 +308,6 @@ mod tests {
             "b08ff0f0e33bca4cd80a7f1dda3f545a00b72a7a144b6b8d1a30150a78f7975c"
         );
     }
-
 }
 
 // /// A block header with txcount attached, which is given in the `headers`

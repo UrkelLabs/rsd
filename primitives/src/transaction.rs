@@ -1,6 +1,6 @@
 use crate::{Input, Output};
 use extended_primitives::{Buffer, Hash};
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -15,6 +15,16 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    pub fn new(locktime: u32, inputs: Vec<Input>, outputs: Vec<Output>) -> Self {
+        Transaction {
+            //@todo not sure what exactly what we should be doing here.
+            version: 0,
+            locktime,
+            inputs,
+            outputs,
+        }
+    }
+
     //TODO implement - see hsd primitives
     //we should keep similar behavior with hash and witness hash
     pub fn hash(&self) -> Hash {
@@ -23,7 +33,7 @@ impl Transaction {
 }
 
 impl Encodable for Transaction {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         //TODO
         32
     }
@@ -58,9 +68,9 @@ impl Encodable for Transaction {
 }
 
 impl Decodable for Transaction {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let mut inputs = Vec::new();
         let mut outputs = Vec::new();
 

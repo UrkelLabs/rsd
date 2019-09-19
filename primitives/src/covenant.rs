@@ -1,7 +1,7 @@
 use crate::Address;
 use extended_primitives::VarInt;
 use extended_primitives::{Buffer, Hash, Uint256};
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_types::{Name, NameHash};
 
 /// A Handshake covenant, which is a method of changing name state on the chain.
@@ -67,9 +67,9 @@ impl Covenant {
 }
 
 impl Decodable for Covenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let covenant_type = buffer.read_u8()?;
 
         match covenant_type {
@@ -126,7 +126,7 @@ impl Decodable for Covenant {
 }
 
 impl Encodable for Covenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         match self {
             Covenant::None => 0,
             Covenant::Claim(claim) => claim.size(),
@@ -173,7 +173,7 @@ pub struct ClaimCovenant {
 }
 
 impl Encodable for ClaimCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -216,9 +216,9 @@ impl Encodable for ClaimCovenant {
 }
 
 impl Decodable for ClaimCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //4
         buffer.read_varint()?;
 
@@ -256,7 +256,7 @@ pub struct OpenCovenant {
 }
 
 impl Encodable for OpenCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -293,9 +293,9 @@ impl Encodable for OpenCovenant {
 }
 
 impl Decodable for OpenCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //3
         buffer.read_varint()?;
 
@@ -327,7 +327,7 @@ pub struct BidCovenant {
 }
 
 impl Encodable for BidCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -370,9 +370,9 @@ impl Encodable for BidCovenant {
 }
 
 impl Decodable for BidCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //4
         buffer.read_varint()?;
 
@@ -406,7 +406,7 @@ pub struct RevealCovenant {
 }
 
 impl Encodable for RevealCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -444,9 +444,9 @@ impl Encodable for RevealCovenant {
 }
 
 impl Decodable for RevealCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //3
         buffer.read_varint()?;
 
@@ -474,7 +474,7 @@ pub struct RedeemCovenant {
 }
 
 impl Encodable for RedeemCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -505,9 +505,9 @@ impl Encodable for RedeemCovenant {
 }
 
 impl Decodable for RedeemCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //2
         buffer.read_varint()?;
 
@@ -534,7 +534,7 @@ pub struct RegisterCovenant {
 }
 
 impl Encodable for RegisterCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -577,9 +577,9 @@ impl Encodable for RegisterCovenant {
 }
 
 impl Decodable for RegisterCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //4
         buffer.read_varint()?;
 
@@ -616,7 +616,7 @@ pub struct UpdateCovenant {
 }
 
 impl Encodable for UpdateCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -659,9 +659,9 @@ impl Encodable for UpdateCovenant {
 }
 
 impl Decodable for UpdateCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //4
         buffer.read_varint()?;
 
@@ -696,7 +696,7 @@ pub struct RenewCovenant {
 }
 
 impl Encodable for RenewCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -733,9 +733,9 @@ impl Encodable for RenewCovenant {
 }
 
 impl Decodable for RenewCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //3
         buffer.read_varint()?;
 
@@ -765,7 +765,7 @@ pub struct TransferCovenant {
 }
 
 impl Encodable for TransferCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         //TODO because all these values are below 252
         let name_hash_length = VarInt::from(32 as u64);
@@ -809,9 +809,9 @@ impl Encodable for TransferCovenant {
 }
 
 impl Decodable for TransferCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //4
         buffer.read_varint()?;
 
@@ -848,7 +848,7 @@ pub struct FinalizeCovenant {
 }
 
 impl Encodable for FinalizeCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -897,9 +897,9 @@ impl Encodable for FinalizeCovenant {
 }
 
 impl Decodable for FinalizeCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //5
         buffer.read_varint()?;
 
@@ -937,7 +937,7 @@ pub struct RevokeCovenant {
 }
 
 impl Encodable for RevokeCovenant {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         let mut size = 0;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
@@ -968,9 +968,9 @@ impl Encodable for RevokeCovenant {
 }
 
 impl Decodable for RevokeCovenant {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //2
         buffer.read_varint()?;
 

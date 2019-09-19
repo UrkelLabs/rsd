@@ -1,5 +1,5 @@
 use extended_primitives::{Buffer, Hash};
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum InvType {
@@ -50,7 +50,7 @@ impl Inventory {
 }
 
 impl Encodable for Inventory {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         36
     }
 
@@ -65,9 +65,9 @@ impl Encodable for Inventory {
 }
 
 impl Decodable for Inventory {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let num_type = buffer.read_u32()?;
 
         //Probably wrap this into a function TODO

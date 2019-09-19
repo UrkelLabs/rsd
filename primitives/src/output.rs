@@ -1,6 +1,6 @@
 use crate::{Address, Covenant};
 use extended_primitives::Buffer;
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_types::Amount;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -12,13 +12,24 @@ pub struct Output {
 
 //TODO get size, is_dust, format, equal + peq, to hex from hex, to buffer, from buffer.
 impl Output {
+    //Defaults to covenant None
+    pub fn new(value: Amount, address: Address) -> Self {
+        Output {
+            value,
+            address,
+            covenant: Covenant::None,
+        }
+    }
+
+    //@todo pub fn new_with_covenant
+
     pub fn is_unspendable(&self) -> bool {
         self.address.is_unspendable() | self.covenant.is_unspendable()
     }
 }
 
 impl Encodable for Output {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         8 + self.address.size() + self.covenant.size()
     }
 
@@ -34,11 +45,11 @@ impl Encodable for Output {
 }
 
 impl Decodable for Output {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         //TODO make from doos
-        let value = Amount::from_doo(buffer.read_u64()?);
+        let value = Amount::from_doos(buffer.read_u64()?);
         let address = Address::decode(buffer)?;
         let covenant = Covenant::decode(buffer)?;
 

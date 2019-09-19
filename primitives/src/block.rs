@@ -1,7 +1,7 @@
 use crate::BlockHeader;
 use crate::Transaction;
 use extended_primitives::Buffer;
-use handshake_protocol::encoding::{Decodable, DecodingError, Encodable};
+use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 /// A Handshake block, which is a collection of transactions with an attached
 /// proof of work.
@@ -14,7 +14,7 @@ pub struct Block {
 }
 
 impl Encodable for Block {
-    fn size(&self) -> u32 {
+    fn size(&self) -> usize {
         //TODO relies on tx's get size which is not done.
         32
     }
@@ -35,9 +35,9 @@ impl Encodable for Block {
 }
 
 impl Decodable for Block {
-    type Error = DecodingError;
+    type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Error> {
+    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let header = BlockHeader::decode(buffer)?;
 
         let count = buffer.read_varint()?;
