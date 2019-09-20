@@ -95,7 +95,8 @@ impl BlockTemplate {
         //@todo
         // Amount::ZERO
         let reward = get_reward(self.height, self.interval);
-        Amount::from_doo(reward) + Amount::from_doo(self.fees as u64)
+        // reward + Amount::from_doos(self.fees as u64)
+        reward.checked_add(Amount::from_doos(self.fees as u64)).unwrap() //@todo not sure best way to handle here.
     }
 }
 
@@ -118,7 +119,7 @@ impl Encodable for BlockTemplate {
             + 4
             + 4
             + 4
-            + self.tree.size()
+            // + self.tree.size()
             + 32
             + 32
             + 32
@@ -154,7 +155,7 @@ impl Encodable for BlockTemplate {
         buffer.write_u32(self.renewals);
         buffer.write_u32(self.interval);
         buffer.write_u32(self.fees);
-        buffer.extend(self.tree.encode());
+        // buffer.extend(self.tree.encode());
         buffer.write_hash(self.previous_header_hash);
         buffer.write_hash(self.tree_root);
         buffer.write_hash(self.filter_root);
@@ -201,7 +202,7 @@ impl Decodable for BlockTemplate {
         buffer.write_u32(self.renewals);
         buffer.write_u32(self.interval);
         buffer.write_u32(self.fees);
-        buffer.extend(self.tree.encode());
+        // buffer.extend(self.tree.encode());
         buffer.write_hash(self.previous_header_hash);
         buffer.write_hash(self.tree_root);
         buffer.write_hash(self.filter_root);
