@@ -1,7 +1,7 @@
 pub mod address;
 pub mod block;
 pub mod block_template;
-pub mod covenant;
+pub mod covenants;
 pub mod headers;
 pub mod input;
 pub mod inventory;
@@ -12,7 +12,7 @@ pub mod transaction;
 pub use crate::address::Address;
 pub use crate::block::Block;
 pub use crate::block_template::BlockTemplate;
-pub use crate::covenant::Covenant;
+pub use crate::covenants::Covenant;
 pub use crate::headers::BlockHeader;
 pub use crate::input::Input;
 pub use crate::inventory::Inventory;
