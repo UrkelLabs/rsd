@@ -57,7 +57,7 @@ impl Encodable for Transaction {
         buffer.write_u32(self.locktime);
 
         for input in self.inputs.iter() {
-            buffer.extend(witness.encode())
+            buffer.extend(input.witness.encode())
         }
 
         buffer

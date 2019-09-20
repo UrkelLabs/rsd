@@ -1,9 +1,9 @@
-use crate::{Address, Transaction, Input, Output};
-use handshake_script::Witness;
+use crate::{Address, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
-use handshake_types::{MerkleTree, Time, Amount};
 use handshake_protocol::consensus::get_reward;
+use handshake_script::Witness;
+use handshake_types::{Amount, MerkleTree, Time};
 
 //@todo -> maybe switch this to block/block_template.rs
 //@todo -> implement defaults
@@ -61,7 +61,6 @@ pub struct BlockTemplate {
 //pub size_limit: u32,
 
 impl BlockTemplate {
-
     pub fn create_coinbase(&self) -> Transaction {
         let mut inputs = Vec::new();
         let mut outputs = Vec::new();
@@ -74,9 +73,8 @@ impl BlockTemplate {
         inputs.push(input);
 
         //Reward output.
-        let output = Output::new(self.get_reward(), self.address);
+        let output = Output::new(self.get_reward(), self.address.clone());
         outputs.push(output);
-
 
         //@todo add claims and proofs
         //
@@ -96,126 +94,128 @@ impl BlockTemplate {
         // Amount::ZERO
         let reward = get_reward(self.height, self.interval);
         // reward + Amount::from_doos(self.fees as u64)
-        reward.checked_add(Amount::from_doos(self.fees as u64)).unwrap() //@todo not sure best way to handle here.
+        reward
+            .checked_add(Amount::from_doos(self.fees as u64))
+            .unwrap() //@todo not sure best way to handle here.
     }
 }
 
-impl Encodable for BlockTemplate {
-    fn size(&self) -> usize {
-        let size = 4
-            + self.time.size()
-            + 4
-            + 4
-            + 32
-            + self.median_time.size()
-            + 4
-            + 1
-            + self.coinbase_flags.len()
-            + 32
-            + 4
-            + 4
-            + 4
-            + 4
-            + 4
-            + 4
-            + 4
-            // + self.tree.size()
-            + 32
-            + 32
-            + 32
-            + 32
-            + self.right.len()
-            + self.left.len()
-            + 1;
+// impl Encodable for BlockTemplate {
+//     fn size(&self) -> usize {
+//         let size = 4
+//             + self.time.size()
+//             + 4
+//             + 4
+//             + 32
+//             + self.median_time.size()
+//             + 4
+//             + 1
+//             + self.coinbase_flags.len()
+//             + 32
+//             + 4
+//             + 4
+//             + 4
+//             + 4
+//             + 4
+//             + 4
+//             + 4
+//             // + self.tree.size()
+//             + 32
+//             + 32
+//             + 32
+//             + 32
+//             + self.right.len()
+//             + self.left.len()
+//             + 1;
 
-        for tx in self.transactions.iter() {
-            size += tx.size();
-        }
+//         for tx in self.transactions.iter() {
+//             size += tx.size();
+//         }
 
-        size
-    }
+//         size
+//     }
 
-    fn encode(&self) -> Buffer {
-        let mut buffer = Buffer::new();
+//     fn encode(&self) -> Buffer {
+//         let mut buffer = Buffer::new();
 
-        buffer.write_u32(self.version);
-        buffer.extend(self.time.encode());
-        buffer.write_u32(self.height);
-        buffer.write_u32(self.bits);
-        buffer.write_u256(self.target);
-        buffer.extend(self.median_time.encode());
-        buffer.write_u32(self.flags);
-        buffer.write_u8(self.coinbase_flags.len() as u8);
-        buffer.write_str(&self.coinbase_flags);
-        buffer.extend(self.address.encode());
-        buffer.write_u32(self.sigop_limit);
-        buffer.write_u32(self.weight_limit);
-        buffer.write_u32(self.opens);
-        buffer.write_u32(self.updates);
-        buffer.write_u32(self.renewals);
-        buffer.write_u32(self.interval);
-        buffer.write_u32(self.fees);
-        // buffer.extend(self.tree.encode());
-        buffer.write_hash(self.previous_header_hash);
-        buffer.write_hash(self.tree_root);
-        buffer.write_hash(self.filter_root);
-        buffer.write_hash(self.reserved_root);
-        buffer.extend(self.right);
-        buffer.extend(self.left);
+//         buffer.write_u32(self.version);
+//         buffer.extend(self.time.encode());
+//         buffer.write_u32(self.height);
+//         buffer.write_u32(self.bits);
+//         buffer.write_u256(self.target);
+//         buffer.extend(self.median_time.encode());
+//         buffer.write_u32(self.flags);
+//         buffer.write_u8(self.coinbase_flags.len() as u8);
+//         buffer.write_str(&self.coinbase_flags);
+//         buffer.extend(self.address.encode());
+//         buffer.write_u32(self.sigop_limit);
+//         buffer.write_u32(self.weight_limit);
+//         buffer.write_u32(self.opens);
+//         buffer.write_u32(self.updates);
+//         buffer.write_u32(self.renewals);
+//         buffer.write_u32(self.interval);
+//         buffer.write_u32(self.fees);
+//         // buffer.extend(self.tree.encode());
+//         buffer.write_hash(self.previous_header_hash);
+//         buffer.write_hash(self.tree_root);
+//         buffer.write_hash(self.filter_root);
+//         buffer.write_hash(self.reserved_root);
+//         buffer.extend(self.right);
+//         buffer.extend(self.left);
 
-        buffer.write_u8(self.transactions.len() as u8);
+//         buffer.write_u8(self.transactions.len() as u8);
 
-        for tx in self.transactions.iter() {
-            buffer.extend(tx.encode());
-        }
+//         for tx in self.transactions.iter() {
+//             buffer.extend(tx.encode());
+//         }
 
-        buffer
-    }
-}
+//         buffer
+//     }
+// }
 
-impl Decodable for BlockTemplate {
-    type Err = DecodingError;
+// impl Decodable for BlockTemplate {
+//     type Err = DecodingError;
 
-    fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
-        let count = buffer.read_varint()?;
-        let mut txdata = Vec::new();
+//     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
+//         let count = buffer.read_varint()?;
+//         let mut txdata = Vec::new();
 
-        for _ in 0..count.as_u64() {
-            txdata.push(Transaction::decode(buffer)?);
-        }
+//         for _ in 0..count.as_u64() {
+//             txdata.push(Transaction::decode(buffer)?);
+//         }
 
-        let version = buffer.read_u32()?;
-        let time = Time::decode(buffer)?;
-        let height = buffer.read_u32()?;
-        let bits = buffer.read_u32()?;
-        let target = buffer.read_
-        buffer.write_u256(self.target);
-        buffer.extend(self.median_time.encode());
-        buffer.write_u32(self.flags);
-        buffer.write_u8(self.coinbase_flags.len() as u8);
-        buffer.write_str(&self.coinbase_flags);
-        buffer.extend(self.address.encode());
-        buffer.write_u32(self.sigop_limit);
-        buffer.write_u32(self.weight_limit);
-        buffer.write_u32(self.opens);
-        buffer.write_u32(self.updates);
-        buffer.write_u32(self.renewals);
-        buffer.write_u32(self.interval);
-        buffer.write_u32(self.fees);
-        // buffer.extend(self.tree.encode());
-        buffer.write_hash(self.previous_header_hash);
-        buffer.write_hash(self.tree_root);
-        buffer.write_hash(self.filter_root);
-        buffer.write_hash(self.reserved_root);
-        buffer.extend(self.right);
-        buffer.extend(self.left);
+//         let version = buffer.read_u32()?;
+//         let time = Time::decode(buffer)?;
+//         let height = buffer.read_u32()?;
+//         let bits = buffer.read_u32()?;
+//         // let target = buffer.read_
+//         buffer.write_u256(self.target);
+//         buffer.extend(self.median_time.encode());
+//         buffer.write_u32(self.flags);
+//         buffer.write_u8(self.coinbase_flags.len() as u8);
+//         buffer.write_str(&self.coinbase_flags);
+//         buffer.extend(self.address.encode());
+//         buffer.write_u32(self.sigop_limit);
+//         buffer.write_u32(self.weight_limit);
+//         buffer.write_u32(self.opens);
+//         buffer.write_u32(self.updates);
+//         buffer.write_u32(self.renewals);
+//         buffer.write_u32(self.interval);
+//         buffer.write_u32(self.fees);
+//         // buffer.extend(self.tree.encode());
+//         buffer.write_hash(self.previous_header_hash);
+//         buffer.write_hash(self.tree_root);
+//         buffer.write_hash(self.filter_root);
+//         buffer.write_hash(self.reserved_root);
+//         buffer.extend(self.right);
+//         buffer.extend(self.left);
 
-        buffer.write_u8(self.transactions.len() as u8);
+//         buffer.write_u8(self.transactions.len() as u8);
 
-        for tx in self.transactions.iter() {
-            buffer.extend(tx.encode());
-        }
+//         for tx in self.transactions.iter() {
+//             buffer.extend(tx.encode());
+//         }
 
-        Ok(Block { header, txdata })
-    }
-}
+//         Ok(Block { header, txdata })
+//     }
+// }

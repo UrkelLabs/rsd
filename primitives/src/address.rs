@@ -24,6 +24,7 @@ impl From<AddressError> for DecodingError {
     }
 }
 
+// #[derive(PartialEq, Clone, Debug, Copy)]
 #[derive(PartialEq, Clone, Debug)]
 pub enum Payload {
     PubkeyHash(Buffer),
@@ -61,6 +62,9 @@ impl Payload {
     }
 }
 
+//@todo ideally implement copy here, but we need to implement it for Buffer, and we really need to
+//look into performance degration there.
+// #[derive(PartialEq, Clone, Debug, Copy)]
 #[derive(PartialEq, Clone, Debug)]
 pub struct Address {
     //Can we make this u8? TODO
