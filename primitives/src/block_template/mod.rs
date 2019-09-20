@@ -1,8 +1,8 @@
 use crate::{Address, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
-use handshake_encoding::{Decodable, DecodingError, Encodable};
+// use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_protocol::consensus::get_reward;
-use handshake_script::Witness;
+// use handshake_script::Witness;
 use handshake_types::{Amount, MerkleTree, Time};
 
 //@todo -> maybe switch this to block/block_template.rs

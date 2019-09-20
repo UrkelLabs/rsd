@@ -180,7 +180,6 @@ impl Decodable for BlockHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
 
     #[test]
     fn test_block_header_hex_default() {

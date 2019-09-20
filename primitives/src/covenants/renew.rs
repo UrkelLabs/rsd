@@ -1,6 +1,6 @@
-use extended_primitives::{Buffer, Hash, Uint256, VarInt};
+use extended_primitives::{Buffer, Hash, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
-use handshake_types::{Name, NameHash};
+use handshake_types::NameHash;
 
 //@todo formatting, and I think common functions to_hex, from_hex.
 //@todo testing.

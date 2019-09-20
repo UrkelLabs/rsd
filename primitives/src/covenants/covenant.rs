@@ -1,8 +1,5 @@
-use crate::Address;
-use extended_primitives::VarInt;
-use extended_primitives::{Buffer, Hash, Uint256};
+use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
-use handshake_types::{Name, NameHash};
 
 use super::{
     BidCovenant, ClaimCovenant, OpenCovenant, RedeemCovenant, RegisterCovenant, RenewCovenant,

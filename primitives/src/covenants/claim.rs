@@ -1,4 +1,4 @@
-use extended_primitives::{Buffer, Hash, Uint256, VarInt};
+use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_types::{Name, NameHash};
 

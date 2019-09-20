@@ -32,28 +32,28 @@ pub enum Payload {
 }
 
 impl Payload {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         match self {
             Payload::PubkeyHash(hash) => hash.len(),
             Payload::ScriptHash(hash) => hash.len(),
         }
     }
 
-    fn to_hash(self) -> Buffer {
+    pub fn to_hash(self) -> Buffer {
         match self {
             Payload::PubkeyHash(hash) => hash,
             Payload::ScriptHash(hash) => hash,
         }
     }
 
-    fn as_hash(&self) -> &Buffer {
+    pub fn as_hash(&self) -> &Buffer {
         match self {
             Payload::PubkeyHash(hash) => hash,
             Payload::ScriptHash(hash) => hash,
         }
     }
 
-    fn from_hash(hash: Buffer) -> Result<Payload, AddressError> {
+    pub fn from_hash(hash: Buffer) -> Result<Payload, AddressError> {
         match hash.len() {
             20 => Ok(Payload::PubkeyHash(hash)),
             32 => Ok(Payload::ScriptHash(hash)),
@@ -140,7 +140,8 @@ impl FromStr for Address {
     type Err = AddressError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (hrp, data) = bech32::decode(s)?;
+        //@todo should we be checking network here?
+        let (_hrp, data) = bech32::decode(s)?;
 
         let (version, hash) = version_hash_from_bech32(data);
 
