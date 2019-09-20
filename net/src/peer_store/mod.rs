@@ -89,11 +89,44 @@ impl PeerStore {
     }
 
     //Returns an address that is attempting to be evicted by another address.
-    pub fn select_tried_collision(&self) -> Result<Option<NetAddress>> {
-        Ok(None)
+    pub async fn select_tried_collision(&self) -> Option<Arc<Mutex<PeerData>>> {
+        //Grab the lock for tried collisions.
+        let mut tried_collisions = self.tried_collisions.lock().await;
+
+        if tried_collisions.len() == 0 {
+            return None;
+        }
+
+        //Select a random element from the collisions
+        //TODO have that random_size function
+        let index = random(tried_collisions.len() as u32);
+
+        let id_new = tried_collisions[index as usize];
+
+        //Get map info lock
+        let map_info = self.map_info.lock().await;
+
+        match map_info.get(&id_new) {
+            None => {
+                tried_collisions.remove(index as usize);
+                None
+            }
+            Some(new_data_locked) => {
+                let new_data = new_data_locked.lock().await;
+                let tried_bucket = new_data.get_tried_bucket(self.key);
+                let position = new_data.get_bucket_position(self.key, false, tried_bucket);
+
+                let tried = self.tried.lock().await;
+
+                let id_old = tried[tried_bucket][position].unwrap();
+
+                Some(map_info.get(&id_old).unwrap().clone())
+            }
+        }
     }
 
     //Probably doesn't need to return a result.
+    //TODO remove result if we can.
     pub async fn resolve_collisions(&self) -> Result<()> {
         let tried_collisions = self.tried_collisions.lock().await;
         let collisions = tried_collisions.iter();
@@ -297,15 +330,15 @@ impl PeerStore {
 
     //This returns a reference directly inside of the hash map. Not sure if that's the
     //functionality we want from this function, so come back to this.
-    pub async fn select(&self, new_only: bool) -> Result<Option<Arc<Mutex<PeerData>>>> {
+    pub async fn select(&self, new_only: bool) -> Option<Arc<Mutex<PeerData>>> {
         //If the store is empty, return none.
         if self.size() == 0 {
-            return Ok(None);
+            return None;
         };
 
         //If we only want new addresses, and the new addresses are empty, return none.
         if new_only && *self.new_count.lock().await == 0 {
-            return Ok(None);
+            return None;
         }
 
         if !new_only
@@ -342,14 +375,14 @@ impl PeerStore {
                 //TODO clean up all the coaxings.
 
                 if (random(30) as f64) < chance * info.get_chance() * ((1 << 30) as f64) {
-                    return Ok(Some(info_locked.clone()));
+                    Some(info_locked.clone());
                 }
 
                 chance *= 1.2;
             }
         }
 
-        Ok(None)
+        None
     }
 
     // Return the number of unique address across all buckets.

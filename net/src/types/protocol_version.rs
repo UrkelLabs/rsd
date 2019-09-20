@@ -27,3 +27,5 @@ impl From<u32> for ProtocolVersion {
         ProtocolVersion(v)
     }
 }
+
+//TODO make this an enum? meh maybe not. but we need a value to know if this doesn't exist already.

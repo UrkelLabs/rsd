@@ -31,3 +31,5 @@ pub const MAX_TX_REQUEST: u32 = 10_000;
 
 ///Maximum number of claim requests
 pub const MAX_CLAIM_REQUEST: u32 = 1_000;
+
+pub const MAX_REFS: u32 = 8;

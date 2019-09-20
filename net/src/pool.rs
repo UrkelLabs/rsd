@@ -11,6 +11,9 @@ use std::time::Duration;
 use crate::peer_store::PeerStore;
 use crate::NetAddress;
 use handshake_protocol::network::Network;
+use futures::channel::mpsc::{UnboundedReceiver, unbounded, UnboundedSender};
+use futures::stream::StreamExt;
+use crate::packets::Packet;
 
 //TODO cleanup imports
 // use crate::blockchain::chain::Chain;
@@ -33,6 +36,8 @@ pub struct Pool {
     config: PoolConfig,
     connected: bool,
     store: Arc<PeerStore>,
+    rx: Arc<Mutex<UnboundedReceiver<Packet>>>,
+    tx: UnboundedSender<Packet>,
     // connected_groups: Mutex<Vec<Vec<u8>>>
 }
 
@@ -53,12 +58,33 @@ impl Pool {
         let peer_list = PeerList::new();
         let peer_store = PeerStore::new();
 
+        let (tx, rx) = unbounded();
+
         Ok(Pool {
             config,
             peers: Arc::new(Mutex::new(peer_list)),
             connected: false,
             store: Arc::new(peer_store),
+            tx: tx,
+            rx: Arc::new(Mutex::new(rx)),
         })
+    }
+
+    pub async fn handle_messages(&self) -> Result<()> {
+        //Get the lock on rx, should be the only part of the program with it.
+        let mut rx = self.rx.lock().await;
+        loop {
+             while let Some(packet) = rx.next().await {
+                 match packet {
+                     _ => {
+                         dbg!("WE GOT THIS PACKET IN THE POOL");
+                         dbg!(packet);
+                     }
+                 }
+             }
+        }
+
+        Ok(())
     }
 
     //Main
@@ -72,8 +98,10 @@ impl Pool {
         // Function for dumping network addresses to peer store to be saved to the file. This
         // should either be a function peer_store, or here.
         let pool_pointer = self.clone();
+        let pool_pointer2 = self.clone();
 
         juliex::spawn(async move {pool_pointer.open_connections().await.unwrap()});
+        juliex::spawn(async move {pool_pointer2.handle_messages().await.unwrap()});
 
         //Infinite loop for start.
         loop {
@@ -113,6 +141,8 @@ impl Pool {
             let mut address_connect: Option<NetAddress> = None;
 
             loop {
+                //TODO remove this
+                break;
                 let mut data_locked = self.store.select_tried_collision().await;
 
                 if !feeler || data_locked.is_none() {
@@ -166,6 +196,9 @@ impl Pool {
                 break;
             };
 
+            //TODO remove
+            let address_connect: Option<NetAddress> = Some("ak2hy7feae2o5pfzsdzw3cxkxsu3lxypykcl6iphnup4adf2ply6a@138.68.61.31:13038".parse().unwrap());
+
             if address_connect.is_none() {
                 //TODO another loop?
                 break;
@@ -179,12 +212,14 @@ impl Pool {
                 //TODO need to impl key
                 //TODO need to impl network (or remove it from this function)
                 //Might not want to throw the error here, and just continue.
+                let tx = self.tx.clone();
                 juliex::spawn(async move {
-                let peer = Peer::connect(address_connect.unwrap(), [0; 32], Network::Testnet).await.unwrap();
-                    // peer.handle()
-
+                let mut peer = Peer::connect(address_connect.unwrap(), [1; 32], Network::Testnet, tx).await.unwrap();
+                    peer.handle_messages().await;
                 });
             }
+            //TODO remove
+            break;
 
             //Find a valid address.
             //Open the connection.

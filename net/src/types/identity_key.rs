@@ -4,6 +4,8 @@ use std::fmt;
 use std::ops;
 use std::str::FromStr;
 
+//TODO need a private identity key struct.
+
 #[derive(Clone, Copy)]
 pub struct IdentityKey([u8; 33]);
 
@@ -11,10 +13,10 @@ impl IdentityKey {
     pub fn as_array(self) -> [u8; 33] {
         self.0
     }
-
-    //To hex
-    //To Base32
 }
+
+//To hex
+//To Base32 }
 
 impl From<[u8; 33]> for IdentityKey {
     fn from(key: [u8; 33]) -> Self {
