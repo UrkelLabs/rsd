@@ -15,11 +15,14 @@
 
 members = [
 "protocol",
+"encoding",
 "primitives",
 "mining",
 "blockchain",
 "net",
-"types"
+"types",
+"store",
+"script"
 ]
 
 # [dependencies]
