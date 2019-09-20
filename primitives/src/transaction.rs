@@ -57,10 +57,7 @@ impl Encodable for Transaction {
         buffer.write_u32(self.locktime);
 
         for input in self.inputs.iter() {
-            //Probably not the most efficient way to do this, TODO review this code.
-            if let Some(witness) = &input.witness {
-                buffer.extend(witness.encode());
-            }
+            buffer.extend(witness.encode())
         }
 
         buffer
@@ -91,7 +88,7 @@ impl Decodable for Transaction {
         //TODO varint as usize please.
         for i in 0..input_count.as_u64() {
             let witness = Witness::decode(buffer)?;
-            inputs[i as usize].witness = Some(witness);
+            inputs[i as usize].witness = witness;
         }
 
         Ok(Transaction {

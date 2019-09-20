@@ -2,7 +2,7 @@ use crate::Outpoint;
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, RngCore};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Input {
@@ -18,11 +18,11 @@ impl Input {
 
         let sequence = thread_rng().next_u32();
         let mut random_bytes = [0_u8; 8];
-        thread_rng().fill(&random_bytes);
+        thread_rng().fill(&mut random_bytes);
 
         witness.push_data(Buffer::from(flags));
-        witness.push_data(Buffer::from(&random_bytes));
-        witness.push_data(Buffer::from(&[0, 8])); //@question -> Ask JJ if this is necessary.
+        witness.push_data(Buffer::from(random_bytes.to_vec()));
+        witness.push_data(Buffer::from(vec![0, 8].as_slice())); //@question -> Ask JJ if this is necessary.
 
         Input {
             sequence,
@@ -54,11 +54,12 @@ impl Decodable for Input {
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let prevout = Outpoint::decode(buffer)?;
         let sequence = buffer.read_u32()?;
+        //@todo do we ever get the witness data?
 
         Ok(Input {
             prevout,
             sequence,
-            witness: None,
+            witness: Witness::new(),
         })
     }
 }
