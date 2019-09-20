@@ -15,3 +15,4 @@ pds = { git="https://github.com/UrkelLabs/pds.git" }
 # Unknown External
 hex = "0.3.2"
 chrono = "0.4"
+cryptoxide = "0.1.1"
