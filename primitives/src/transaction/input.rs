@@ -1,4 +1,4 @@
-use crate::Outpoint;
+use crate::{Outpoint, Transaction};
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
@@ -12,8 +12,15 @@ pub struct Input {
 }
 
 impl Input {
+    // pub fn new() -> Input {
+    //     Input {
+    //         // prevout: Outpoint::
+
+    //     }
+    // }
+
     pub fn new_coinbase(flags: &str) -> Input {
-        let prevout = Outpoint::null(); //@todo check
+        let prevout = Outpoint::null();
         let mut witness = Witness::new();
 
         let sequence = thread_rng().next_u32();
@@ -54,7 +61,6 @@ impl Decodable for Input {
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let prevout = Outpoint::decode(buffer)?;
         let sequence = buffer.read_u32()?;
-        //@todo do we ever get the witness data?
 
         Ok(Input {
             prevout,
