@@ -1,9 +1,12 @@
-use crate::{Outpoint, Transaction};
+use crate::Outpoint;
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
 use rand::{thread_rng, Rng, RngCore};
 
+//@todo -> Possible keep an object in here of address: Option<Address>
+//We can just default to None all the time, and only fill in if we are created
+//with values that could create that address. Something for a future todo.
 #[derive(Clone, PartialEq, Debug)]
 pub struct Input {
     pub prevout: Outpoint,
@@ -12,15 +15,8 @@ pub struct Input {
 }
 
 impl Input {
-    // pub fn new() -> Input {
-    //     Input {
-    //         // prevout: Outpoint::
-
-    //     }
-    // }
-
     pub fn new_coinbase(flags: &str) -> Input {
-        let prevout = Outpoint::null();
+        let prevout = Outpoint::default();
         let mut witness = Witness::new();
 
         let sequence = thread_rng().next_u32();
@@ -70,7 +66,19 @@ impl Decodable for Input {
     }
 }
 
-//@todo Debug
-//@todo Display
-//@todo Defaults
+// ===== From Implementations =====
+
 //@todo From<TX>
+//@todo From<Outpoint>
+
+// ===== Default =====
+
+impl Default for Input {
+    fn default() -> Input {
+        Input {
+            prevout: Outpoint::default(),
+            witness: Witness::new(),
+            sequence: u32::max_value(),
+        }
+    }
+}
