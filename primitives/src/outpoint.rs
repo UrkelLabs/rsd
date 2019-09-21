@@ -1,8 +1,11 @@
+use crate::Transaction;
 use extended_primitives::{Buffer, Hash};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
+use std::default::Default;
 use std::fmt;
 
-//TODO should we impl Odr?
+//@todo should we impl Odr?
+//@todo Eq and PartialEq probably need to be rewritten for BIP69
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Outpoint {
     txid: Hash,
@@ -10,16 +13,12 @@ pub struct Outpoint {
 }
 
 impl Outpoint {
-    ///Returns a null Outpoint for use in coinbase transactions.
-    pub fn null() -> Outpoint {
-        Outpoint {
-            txid: Default::default(),
-            index: u32::max_value(),
-        }
+    pub fn new(hash: Hash, index: u32) -> Outpoint {
+        Outpoint { txid: hash, index }
     }
 
     pub fn is_null(&self) -> bool {
-        *self == Outpoint::null()
+        *self == Outpoint::default()
     }
 }
 
@@ -53,7 +52,30 @@ impl Decodable for Outpoint {
 //@todo Testing
 //@todo test compare and Ord - ensure it matches hsd
 //@todo JSON Serialization
-//@todo impl From<TX>
+
+// ===== From Implementations =====
+
+impl From<(Transaction, u32)> for Outpoint {
+    fn from((tx, index): (Transaction, u32)) -> Self {
+        Outpoint {
+            txid: tx.hash(),
+            index,
+        }
+    }
+}
+
+// ===== Default =====
+
+impl Default for Outpoint {
+    fn default() -> Outpoint {
+        Outpoint {
+            txid: Hash::default(),
+            index: u32::max_value(),
+        }
+    }
+}
+
+// ===== Display and Debug =====
 
 impl fmt::Display for Outpoint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
