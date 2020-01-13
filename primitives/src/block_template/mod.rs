@@ -45,8 +45,11 @@ pub struct BlockTemplate {
     pub reserved_root: Hash,
     pub right: Buffer,
     pub left: Buffer,
+    pub merkle_root: Hash,
     //@todo remove this for new pow.
     pub transactions: Vec<Transaction>,
+    pub coinbase: Transaction,
+    pub witness_root: Hash,
     //@todo need airdrop claim (sp)?
     // pub claims: Vec<AirdropClaim>,
     //@todo need airdrop proof type.
@@ -87,6 +90,44 @@ impl BlockTemplate {
 
         cb
     }
+
+    pub fn refresh(&mut self) {
+        let cb = self.create_coinbase();
+
+        let mut leaves = Vec::new();
+        leaves.push(cb.hash());
+
+        for tx in self.transactions.iter() {
+            leaves.push(tx.hash());
+        }
+
+        self.merkle_root = MerkleTree::from_leaves(leaves).get_root();
+
+        let mut leaves = Vec::new();
+        leaves.push(cb.witness_hash());
+
+        for tx in self.transactions.iter() {
+            leaves.push(tx.witness_hash());
+        }
+
+        self.witness_root = MerkleTree::from_leaves(leaves).get_root();
+
+        self.coinbase = cb;
+    }
+
+    // {
+    //  const leaves = [];
+
+    //  leaves.push(cb.witnessHash());
+
+    //  for (const {tx} of this.items)
+    //    leaves.push(tx.witnessHash());
+
+    //  this.witnessRoot = merkle.createRoot(BLAKE2b, leaves);
+    // }
+
+    // this.coinbase = cb;
+    // }
 
     //Make Value a custom type here...
     pub fn get_reward(&self) -> Amount {
