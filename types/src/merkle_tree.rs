@@ -5,12 +5,13 @@ use hex::FromHex;
 
 //Merkle tree type for use in Handshake
 //@todo
+//@todo can I generalize this entire thing?
 pub struct MerkleTree {
     steps: Vec<Hash>,
 }
 
 impl MerkleTree {
-    fn from_leaves(leaves: Vec<Hash>) -> Self {
+    pub fn from_leaves(leaves: Vec<Hash>) -> Self {
         let mut nodes = Vec::new();
         let mut steps = Vec::new();
 
@@ -70,6 +71,10 @@ impl MerkleTree {
         }
 
         MerkleTree { steps }
+    }
+
+    pub fn get_root(&self) -> Hash {
+        self.steps[self.steps.len() - 1]
     }
 }
 
