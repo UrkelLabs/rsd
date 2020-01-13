@@ -30,6 +30,11 @@ impl Transaction {
     pub fn hash(&self) -> Hash {
         Default::default()
     }
+
+    //@todo
+    pub fn witness_hash(&self) -> Hash {
+        Default::default()
+    }
 }
 
 impl Encodable for Transaction {
