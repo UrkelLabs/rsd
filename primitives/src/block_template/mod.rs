@@ -10,12 +10,10 @@ use handshake_types::{Amount, MerkleTree, Time};
 
 //@todo wrap this inside a module for block.
 pub struct BlockTemplate {
-    /// Version
+    pub prev_block: Hash,
     pub version: u32,
-    pub time: Time,
-    /// Block height
     pub height: u32,
-    // /// The compressed difficulty
+    pub time: Time,
     // TODO convert back to Compact type, but use u32 for now.
     pub bits: u32,
     pub target: Uint256,
@@ -37,31 +35,17 @@ pub struct BlockTemplate {
     pub interval: u32,
     //@todo Probably move to Amount type.
     pub fees: u32,
-    pub tree: MerkleTree,
-    //@todo these will all be semi-switch in new pow.
-    pub previous_header_hash: Hash,
-    pub tree_root: Hash,
-    pub filter_root: Hash,
-    pub reserved_root: Hash,
-    pub right: Buffer,
-    pub left: Buffer,
     pub merkle_root: Hash,
-    //@todo remove this for new pow.
-    pub transactions: Vec<Transaction>,
-    pub coinbase: Transaction,
     pub witness_root: Hash,
+    pub tree_root: Hash,
+    pub reserved_root: Hash,
+    pub coinbase: Transaction,
+    pub transactions: Vec<Transaction>,
     //@todo need airdrop claim (sp)?
     // pub claims: Vec<AirdropClaim>,
     //@todo need airdrop proof type.
     // pub airdrops: Vec<AirdropProof>,
 }
-
-//@todo maybe include.
-///// Total funds available for the coinbase (in Satoshis)
-//pub coinbase_value: u64,
-////TODO figure out if all of these are needed or not.
-//// /// Number of bytes allowed in the block
-//pub size_limit: u32,
 
 impl BlockTemplate {
     pub fn create_coinbase(&self) -> Transaction {
@@ -115,21 +99,6 @@ impl BlockTemplate {
         self.coinbase = cb;
     }
 
-    // {
-    //  const leaves = [];
-
-    //  leaves.push(cb.witnessHash());
-
-    //  for (const {tx} of this.items)
-    //    leaves.push(tx.witnessHash());
-
-    //  this.witnessRoot = merkle.createRoot(BLAKE2b, leaves);
-    // }
-
-    // this.coinbase = cb;
-    // }
-
-    //Make Value a custom type here...
     pub fn get_reward(&self) -> Amount {
         //@todo
         // Amount::ZERO
