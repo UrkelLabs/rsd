@@ -88,6 +88,16 @@ impl Address {
     }
 }
 
+//@todo review if this is a good default. Should be triggered on "null"
+impl Default for Address {
+    fn default() -> Self {
+        Address {
+            version: 0,
+            hash: Payload::PubkeyHash(Buffer::new()),
+        }
+    }
+}
+
 impl Decodable for Address {
     type Err = DecodingError;
 
@@ -112,10 +122,7 @@ impl Decodable for Address {
 
         let hash = Payload::from_hash(Buffer::from(hash))?;
 
-        Ok(Address {
-            version: version,
-            hash,
-        })
+        Ok(Address { version, hash })
     }
 }
 
