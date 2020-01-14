@@ -2,6 +2,7 @@ use crate::{Input, Output};
 use extended_primitives::{Buffer, Hash};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
+use hex::{FromHex, FromHexError};
 
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct Transaction {
@@ -38,6 +39,17 @@ impl Transaction {
 
     pub fn is_null(&self) -> bool {
         *self == Default::default()
+    }
+}
+
+//@todo this needs to come from our encoding library. Do that today.
+impl FromHex for Transaction {
+    type Error = FromHexError;
+
+    fn from_hex<T: AsRef<[u8]>>(hex: T) -> Result<Self, Self::Error> {
+        let mut buf = Buffer::from(hex::decode(hex).unwrap());
+
+        Ok(Transaction::decode(&mut buf).unwrap())
     }
 }
 
