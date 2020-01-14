@@ -1,7 +1,8 @@
 use crate::block_template::json::BlockTemplateJSON;
 use crate::{Address, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
-use handshake_types::Time;
+use handshake_protocol::consensus::get_reward;
+use handshake_types::{Amount, MerkleTree, Time};
 use hex::FromHex;
 //@todo make a builder for block template, since so many of the options are likely not easy to do
 //via just a simple new function. Have "new" cover the most basic of options, and then the builder
@@ -83,10 +84,75 @@ impl BlockTemplateBuilder {
         let mut templte_txs = Vec::new();
         for tx in txs.iter() {
             //@todo need to add counts to self.
+            //@todo also need to add fees to self as well.
             templte_txs.push(Transaction::from_hex(&tx).unwrap());
         }
 
         self.transactions = templte_txs;
         self
     }
+
+    pub fn with_address(mut self, address: Address) -> Self {
+        self.address = address;
+        self
+    }
+
+    pub fn with_create_coinbase(mut self) -> Self {
+        let mut inputs = Vec::new();
+        let mut outputs = Vec::new();
+
+        // Commit to height
+        let locktime = self.height;
+
+        // Coinbase input
+        let input = Input::new_coinbase(&self.coinbase_flags);
+        inputs.push(input);
+
+        //Reward output.
+        let output = Output::new(
+            calculate_reward(self.height, self.interval, self.fees),
+            self.address.clone(),
+        );
+        outputs.push(output);
+
+        //@todo add claims and proofs
+        //
+        self.coinbase = Transaction::new(locktime, inputs, outputs);
+
+        //Not needed I believe. @todo
+        // cb.refresh()
+
+        // assert!(cb.inputs[0].witness.getSize() <= 1000);
+        self
+    }
+
+    pub fn with_create_merkle_root(mut self) -> Self {
+        let mut leaves = Vec::new();
+        leaves.push(self.coinbase.hash());
+
+        for tx in self.transactions.iter() {
+            leaves.push(tx.hash());
+        }
+
+        self.merkle_root = MerkleTree::from_leaves(leaves).get_root();
+        self
+    }
+
+    pub fn with_create_witness_root(mut self) -> Self {
+        let mut leaves = Vec::new();
+        leaves.push(self.coinbase.witness_hash());
+
+        for tx in self.transactions.iter() {
+            leaves.push(tx.witness_hash());
+        }
+
+        self.witness_root = MerkleTree::from_leaves(leaves).get_root();
+        self
+    }
+}
+
+pub fn calculate_reward(height: u32, interval: u32, fees: u32) -> Amount {
+    let reward = get_reward(height, interval);
+    // reward + Amount::from_doos(self.fees as u64)
+    reward.checked_add(Amount::from_doos(fees as u64)).unwrap() //@todo not sure best way to handle here.
 }
