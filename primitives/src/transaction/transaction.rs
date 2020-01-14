@@ -3,7 +3,7 @@ use extended_primitives::{Buffer, Hash};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct Transaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: u32,
@@ -34,6 +34,10 @@ impl Transaction {
     //@todo
     pub fn witness_hash(&self) -> Hash {
         Default::default()
+    }
+
+    pub fn is_null(&self) -> bool {
+        *self == Default::default()
     }
 }
 
