@@ -1,5 +1,5 @@
-mod builder;
-mod json;
+pub mod builder;
+pub mod json;
 use crate::{Address, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
 use json::BlockTemplateJSON;
