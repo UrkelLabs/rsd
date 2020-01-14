@@ -1,5 +1,8 @@
+mod builder;
+mod json;
 use crate::{Address, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
+use json::BlockTemplateJSON;
 // use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_protocol::consensus::get_reward;
 // use handshake_script::Witness;
