@@ -1,5 +1,7 @@
 use crate::{Input, Output};
-use extended_primitives::{Buffer, Hash};
+use cryptoxide::blake2b::Blake2b;
+use cryptoxide::digest::Digest;
+use extended_primitives::{Buffer, Hash, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
 use hex::{FromHex, FromHexError};
@@ -26,10 +28,19 @@ impl Transaction {
         }
     }
 
-    //TODO implement - see hsd primitives
-    //we should keep similar behavior with hash and witness hash
     pub fn hash(&self) -> Hash {
-        Default::default()
+        let raw = self.encode();
+
+        let base_size = self.get_base_size();
+
+        let base = raw[..base_size].to_vec();
+
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&base);
+        sh.result(&mut output);
+
+        Hash::from(output)
     }
 
     //@todo
@@ -39,6 +50,25 @@ impl Transaction {
 
     pub fn is_null(&self) -> bool {
         *self == Default::default()
+    }
+
+    pub fn get_base_size(&self) -> usize {
+        let mut size = 0;
+        size += 4;
+
+        size += VarInt::from(self.inputs.len()).encoded_size() as usize;
+
+        for _input in self.inputs.iter() {
+            size += 40;
+        }
+
+        size = VarInt::from(self.outputs.len()).encoded_size() as usize;
+        for output in self.outputs.iter() {
+            size += output.size();
+        }
+
+        size += 4;
+        size
     }
 }
 
@@ -54,6 +84,7 @@ impl FromHex for Transaction {
 }
 
 impl Encodable for Transaction {
+    //@todo this is going to be the "non-base size"
     fn size(&self) -> usize {
         //TODO
         32
