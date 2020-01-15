@@ -43,9 +43,19 @@ impl Transaction {
         Hash::from(output)
     }
 
-    //@todo
     pub fn witness_hash(&self) -> Hash {
-        Default::default()
+        let raw = self.encode();
+
+        let base_size = self.get_base_size();
+
+        let witness = raw[base_size..].to_vec();
+
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&witness);
+        sh.result(&mut output);
+
+        Hash::from(output)
     }
 
     pub fn is_null(&self) -> bool {
