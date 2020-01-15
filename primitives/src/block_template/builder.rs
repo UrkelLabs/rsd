@@ -1,5 +1,5 @@
 use crate::block_template::json::BlockTemplateJSON;
-use crate::{Address, Input, Output, Transaction};
+use crate::{Address, BlockTemplate, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_protocol::consensus::get_reward;
 use handshake_types::{Amount, MerkleTree, Time};
@@ -148,6 +148,35 @@ impl BlockTemplateBuilder {
 
         self.witness_root = MerkleTree::from_leaves(leaves).get_root();
         self
+    }
+
+    pub fn build(self) -> BlockTemplate {
+        BlockTemplate {
+            prev_block: self.prev_block,
+            version: self.version,
+            height: self.height,
+            time: self.time,
+            bits: self.bits,
+            target: self.target,
+            median_time: self.median_time,
+            flags: self.flags,
+            coinbase_flags: self.coinbase_flags,
+            address: self.address,
+            sigop_limit: self.sigop_limit,
+            weight_limit: self.weight_limit,
+            opens: self.opens,
+            updates: self.updates,
+            renewals: self.renewals,
+            interval: self.interval,
+            fees: self.fees,
+            merkle_root: self.merkle_root,
+            witness_root: self.witness_root,
+            tree_root: self.tree_root,
+            reserved_root: self.reserved_root,
+            coinbase: self.coinbase,
+            mask: self.mask,
+            transactions: self.transactions,
+        }
     }
 }
 

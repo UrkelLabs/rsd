@@ -1,6 +1,8 @@
 pub mod builder;
 pub mod json;
 use crate::{Address, Input, Output, Transaction};
+use cryptoxide::blake2b::Blake2b;
+use cryptoxide::digest::Digest;
 use extended_primitives::{Buffer, Hash, Uint256};
 use json::BlockTemplateJSON;
 // use handshake_encoding::{Decodable, DecodingError, Encodable};
@@ -43,6 +45,7 @@ pub struct BlockTemplate {
     pub tree_root: Hash,
     pub reserved_root: Hash,
     pub coinbase: Transaction,
+    pub mask: Hash,
     pub transactions: Vec<Transaction>,
     //@todo need airdrop claim (sp)?
     // pub claims: Vec<AirdropClaim>,
@@ -76,6 +79,16 @@ impl BlockTemplate {
         // assert!(cb.inputs[0].witness.getSize() <= 1000);
 
         cb
+    }
+
+    pub fn mask_hash(&self) -> Hash {
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&self.prev_block.to_array());
+        sh.input(&self.mask.to_array());
+        sh.result(&mut output);
+
+        Hash::from(output)
     }
 
     pub fn refresh(&mut self) {
