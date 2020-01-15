@@ -13,7 +13,7 @@ pub struct MerkleTree {
 impl MerkleTree {
     pub fn from_leaves(leaves: Vec<Hash>) -> Self {
         let mut nodes = Vec::new();
-        let mut steps = Vec::new();
+        // let mut steps = Vec::new();
 
         let mut output = [0; 32];
         let mut sh = Blake2b::new(32);
@@ -34,11 +34,16 @@ impl MerkleTree {
 
         let mut len = nodes.len();
 
+        if (len == 0) {
+            nodes.push(sentinel);
+            return MerkleTree { steps: nodes };
+        }
+
         while (len > 1) {
             //@todo is this necessary?
             //const hashes = [consensus.ZERO_HASH];
             let mut hashes = Vec::new();
-            steps.push(nodes[1]);
+            // steps.push(nodes[1]);
 
             // for (let i = 2; i < len; i +=2) {
             for i in 2..len {
@@ -63,14 +68,14 @@ impl MerkleTree {
                 sh.input(&right.to_array());
                 sh.result(&mut output);
 
-                hashes.push(Hash::from(output));
+                nodes.push(Hash::from(output));
             }
 
             nodes = hashes;
             len = nodes.len();
         }
 
-        MerkleTree { steps }
+        MerkleTree { steps: nodes }
     }
 
     pub fn get_root(&self) -> Hash {
