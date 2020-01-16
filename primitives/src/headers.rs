@@ -2,6 +2,7 @@
 
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
+use sha3::{Digest as _Digest, Sha3_256};
 use sp800_185::KMac;
 
 use extended_primitives::{Buffer, Hash, Uint256};
@@ -18,15 +19,13 @@ pub struct BlockHeader {
     /// The protocol version.
     pub version: u32,
     /// Reference to the previous block in the chain
-    pub prev_blockhash: Hash,
+    pub prev_block: Hash,
     /// The root hash of the merkle tree of transactions in the block
     pub merkle_root: Hash,
 
     pub witness_root: Hash,
     /// The root hash of the Urkel Tree of name states in the block
     pub tree_root: Hash,
-    /// The root hash of the bloom filter XXX Need more here.
-    pub filter_root: Hash,
     /// A root reserved for future implementation of Neutrino on the protocol level
     pub reserved_root: Hash,
     /// The timestamp of the block, as claimed by the miner
@@ -37,39 +36,136 @@ pub struct BlockHeader {
     /// This should probably be a Compact type - See Parity Bitcoin //TODO
     pub bits: u32,
     /// The nonce, selected to obtain a low enough blockhash
-    //Change this to Buffer, or Bytes some kind of raw type. - let's see what the output of our kmac function is.
-    //256 uint
-    pub nonce: Uint256,
+    pub nonce: u32,
+    //@todo make this a type w/ a hardcoded size.
+    pub extra_nonce: Buffer,
+    ///A value used to mask potential blocks from miners. Defeating the block withholding attack
+    pub mask: Hash,
 }
 
 impl BlockHeader {
     pub fn hash(&self) -> Hash {
-        let mut hasher = Blake2b::new(32);
-        //I think can just pass without decoding... TODO
-        hasher.input(&hex::decode(self.as_hex()).unwrap());
-        // let hash = hasher.finalize();
-        let mut out = [0; 32];
+        self.pow_hash()
+    }
 
-        hasher.result(&mut out);
+    ///Retrieve deterministically random padding.
+    //@todo I don't actually this is correct. Let's come back to it later.
+    pub fn padding(&self, size: usize) -> Vec<u8> {
+        let mut padding = Vec::new();
+        for it in self
+            .prev_block
+            .to_array()
+            .iter()
+            .zip(self.tree_root.to_array().iter())
+        {
+            let (prev, tree) = it;
 
-        Hash::from(hex::encode(out))
+            let padding_byte = prev ^ tree;
+            padding.push(padding_byte);
+        }
+
+        //@todo smells, double check this works for all values.
+        padding[..size].to_vec()
+    }
+
+    /// The subheader contains miner-mutable and less essential data (that is,
+    /// less essential for SPV resolvers). It is exactly one blake2b block (128 bytes).
+    pub fn to_subhead(&self) -> Buffer {
+        let mut buffer = Buffer::new();
+
+        buffer.write_bytes(&self.extra_nonce);
+        buffer.write_hash(self.reserved_root);
+        buffer.write_hash(self.witness_root);
+        buffer.write_hash(self.merkle_root);
+        buffer.write_u32(self.version);
+        buffer.write_u32(self.bits);
+
+        buffer
+    }
+
+    // ===== Hash Functions ===== //
+
+    /// Compute the subheader hash.
+    pub fn sub_hash(&self) -> Hash {
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&self.to_subhead());
+        sh.result(&mut output);
+
+        Hash::from(output)
+    }
+
+    ///Compute xor bytes hash.
+    pub fn mask_hash(&self) -> Hash {
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&self.prev_block.to_array());
+        sh.input(&self.mask.to_array());
+        sh.result(&mut output);
+
+        Hash::from(output)
+    }
+
+    pub fn commit_hash(&self) -> Hash {
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&self.sub_hash().to_array());
+        sh.input(&self.mask_hash().to_array());
+        sh.result(&mut output);
+
+        Hash::from(output)
     }
 
     //Writes everything but the nonce to a buffer.
     pub fn to_prehead(&self) -> Buffer {
         let mut buffer = Buffer::new();
 
-        buffer.write_u32(self.version);
-        buffer.write_hash(self.prev_blockhash);
-        buffer.write_hash(self.merkle_root);
-        buffer.write_hash(self.witness_root);
-        buffer.write_hash(self.tree_root);
-        buffer.write_hash(self.filter_root);
-        buffer.write_hash(self.reserved_root);
+        buffer.write_u32(self.nonce);
         buffer.write_u64(self.time);
-        buffer.write_u32(self.bits);
+        buffer.write_bytes(&self.padding(20));
+        buffer.write_hash(self.prev_block);
+        buffer.write_hash(self.tree_root);
+        buffer.write_hash(self.commit_hash());
 
         buffer
+    }
+
+    pub fn share_hash(&self) -> Hash {
+        let data = self.to_prehead();
+
+        // 128 bytes (output as BLAKE2b-512).
+        let mut sh = Blake2b::new(64);
+        let mut left = [0; 64];
+        sh.input(&data);
+        sh.result(&mut left);
+
+        // 128 + 8 = 136 bytes.
+        let mut sh = Sha3_256::new();
+        sh.input(&data);
+        sh.input(self.padding(8));
+        let right = sh.result();
+
+        // 64 + 32 + 32 = 128 bytes.
+        let mut sh = Blake2b::new(32);
+        let mut output = [0; 32];
+        sh.input(&left);
+        sh.input(&self.padding(32));
+        sh.input(&right);
+        sh.result(&mut output);
+
+        Hash::from(output)
+    }
+
+    pub fn pow_hash(&self) -> Hash {
+        let hash = self.share_hash();
+        let mask = self.mask.to_array();
+
+        for (i, hash_byte) in hash.to_array().iter_mut().enumerate() {
+            //@smells
+            *hash_byte ^= mask[i];
+        }
+
+        hash
     }
 
     //Wrapper function for all the verification on the headers
@@ -80,68 +176,59 @@ impl BlockHeader {
     }
 
     pub fn verify_pow(&self) -> bool {
-        let data = self.to_prehead();
-
-        let mut key = [0; 32];
-
-        let mut kmac = KMac::new_kmac256(&self.nonce.to_le_bytes(), &[]);
-        kmac.update(&data);
-        kmac.finalize(&mut key);
-
-        let mut hasher = Blake2b::new_keyed(32, &key);
-        hasher.input(&data);
-
-        let mut hash = [0; 32];
-
-        hasher.result(&mut hash);
-
         //Pass to consensus code.
-        consensus_verify_pow(&Hash::from(hash), self.bits)
+        consensus_verify_pow(&self.hash(), self.bits)
     }
 
-    pub fn as_hex(&self) -> String {
-        //Use prehead here.
-        let mut buffer = Buffer::new();
+    //Just use fromHex, toHex here. Today let's get to this.
+    //pub fn as_hex(&self) -> String {
+    //    //Use prehead here.
+    //    let mut buffer = Buffer::new();
 
-        buffer.write_u32(self.version);
-        buffer.write_hash(self.prev_blockhash);
-        buffer.write_hash(self.merkle_root);
-        buffer.write_hash(self.witness_root);
-        buffer.write_hash(self.tree_root);
-        buffer.write_hash(self.filter_root);
-        buffer.write_hash(self.reserved_root);
-        buffer.write_u64(self.time);
-        //This will switch to write_compact when we convert the type TODO
-        buffer.write_u32(self.bits);
-        // buffer.write_u64(self.nonce as u64);
-        //Think we might want to change this to write Bytes or write Buffer.
-        //Because nonce is not *technically* a hash
-        buffer.write_u256(self.nonce);
+    //    buffer.write_u32(self.version);
+    //    buffer.write_hash(self.prev_blockhash);
+    //    buffer.write_hash(self.merkle_root);
+    //    buffer.write_hash(self.witness_root);
+    //    buffer.write_hash(self.tree_root);
+    //    buffer.write_hash(self.filter_root);
+    //    buffer.write_hash(self.reserved_root);
+    //    buffer.write_u64(self.time);
+    //    //This will switch to write_compact when we convert the type TODO
+    //    buffer.write_u32(self.bits);
+    //    // buffer.write_u64(self.nonce as u64);
+    //    //Think we might want to change this to write Bytes or write Buffer.
+    //    //Because nonce is not *technically* a hash
+    //    buffer.write_u256(self.nonce);
 
-        buffer.to_hex()
-    }
+    //    buffer.to_hex()
+    //}
 }
 
 impl Encodable for BlockHeader {
     fn size(&self) -> usize {
         //Put this into consensus TODO
-        240
+        236
     }
 
     fn encode(&self) -> Buffer {
         let mut buffer = Buffer::new();
 
-        buffer.write_u32(self.version);
-        buffer.write_hash(self.prev_blockhash);
-        buffer.write_hash(self.merkle_root);
-        buffer.write_hash(self.witness_root);
-        buffer.write_hash(self.tree_root);
-        buffer.write_hash(self.filter_root);
-        buffer.write_hash(self.reserved_root);
+        //Preheader
+        buffer.write_u32(self.nonce);
         buffer.write_u64(self.time);
-        //This will switch to write_compact when we convert the type TODO
+        buffer.write_hash(self.prev_block);
+        buffer.write_hash(self.tree_root);
+
+        //Subheader
+        buffer.write_bytes(&self.extra_nonce);
+        buffer.write_hash(self.reserved_root);
+        buffer.write_hash(self.witness_root);
+        buffer.write_hash(self.merkle_root);
+        buffer.write_u32(self.version);
         buffer.write_u32(self.bits);
-        buffer.write_u256(self.nonce);
+
+        //Mask
+        buffer.write_bytes(&self.mask.to_array());
 
         buffer
     }
@@ -151,28 +238,37 @@ impl Decodable for BlockHeader {
     type Err = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
-        let version = buffer.read_u32()?;
-        let prev_blockhash = buffer.read_hash()?;
-        let merkle_root = buffer.read_hash()?;
-        let witness_root = buffer.read_hash()?;
-        let tree_root = buffer.read_hash()?;
-        let filter_root = buffer.read_hash()?;
-        let reserved_root = buffer.read_hash()?;
+        //Preheader
+        let nonce = buffer.read_u32()?;
         let time = buffer.read_u64()?;
+        let prev_block = buffer.read_hash()?;
+        let tree_root = buffer.read_hash()?;
+
+        //Subheader
+        //@todo put this into consensus NONCE_SIZE
+        let extra_nonce = buffer.read_bytes(24)?;
+        let reserved_root = buffer.read_hash()?;
+        let witness_root = buffer.read_hash()?;
+        let merkle_root = buffer.read_hash()?;
+        let version = buffer.read_u32()?;
         let bits = buffer.read_u32()?;
-        let nonce = buffer.read_u256()?;
+
+        //Mask
+        //@todo figure out the right type for mask.
+        let mask = buffer.read_hash()?;
 
         Ok(BlockHeader {
             version,
-            prev_blockhash,
+            prev_block,
             merkle_root,
             witness_root,
             tree_root,
-            filter_root,
             reserved_root,
+            extra_nonce: Buffer::from(extra_nonce),
             time,
             bits,
             nonce,
+            mask,
         })
     }
 }
