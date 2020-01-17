@@ -43,7 +43,7 @@ pub fn consensus_verify_pow(hash: &Hash, bits: u32) -> bool {
     dbg!(&hash_number);
     dbg!(&target);
 
-    hash_number < target
+    hash_number <= target
 }
 
 //Again make this a Compact type -> Maybe implement target from that function in the future.
