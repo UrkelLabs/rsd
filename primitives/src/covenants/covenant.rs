@@ -2,8 +2,8 @@ use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 use super::{
-    BidCovenant, ClaimCovenant, OpenCovenant, RedeemCovenant, RegisterCovenant, RenewCovenant,
-    RevealCovenant, UpdateCovenant, TransferCovenant, FinalizeCovenant, RevokeCovenant
+    BidCovenant, ClaimCovenant, FinalizeCovenant, OpenCovenant, RedeemCovenant, RegisterCovenant,
+    RenewCovenant, RevealCovenant, RevokeCovenant, TransferCovenant, UpdateCovenant,
 };
 
 /// A Handshake covenant, which is a method of changing name state on the chain.
@@ -75,6 +75,7 @@ impl Decodable for Covenant {
         let covenant_type = buffer.read_u8()?;
 
         match covenant_type {
+            //@todo I don't think this will work. Still need to read the varint on this one.
             0 => Ok(Covenant::None),
             1 => {
                 let covenant = ClaimCovenant::decode(buffer)?;
@@ -147,7 +148,12 @@ impl Encodable for Covenant {
 
     fn encode(&self) -> Buffer {
         match self {
-            Covenant::None => Buffer::new(),
+            Covenant::None => {
+                let mut buf = Buffer::new();
+                buf.write_u8(0);
+                buf.write_varint(0);
+                buf
+            }
             Covenant::Claim(claim) => claim.encode(),
             Covenant::Open(open) => open.encode(),
             Covenant::Bid(bid) => bid.encode(),
