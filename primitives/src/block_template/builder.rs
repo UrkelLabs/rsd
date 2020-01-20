@@ -180,8 +180,8 @@ impl BlockTemplateBuilder {
     }
 }
 
-pub fn calculate_reward(height: u32, interval: u32, fees: u32) -> Amount {
-    let reward = get_reward(height, interval);
+pub fn calculate_reward(height: u32, _interval: u32, fees: u32) -> Amount {
+    let reward = get_reward(height, 170_000);
     // reward + Amount::from_doos(self.fees as u64)
     reward.checked_add(Amount::from_doos(fees as u64)).unwrap() //@todo not sure best way to handle here.
 }
