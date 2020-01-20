@@ -23,9 +23,13 @@ impl Input {
         let mut random_bytes = [0_u8; 8];
         thread_rng().fill(&mut random_bytes);
 
-        witness.push_data(Buffer::from(flags));
+        let mut flag_buffer = Buffer::new();
+        flag_buffer.fill(0, 20);
+        flag_buffer.write_str(flags);
+
+        witness.push_data(flag_buffer);
         witness.push_data(Buffer::from(random_bytes.to_vec()));
-        witness.push_data(Buffer::from(vec![0, 8].as_slice())); //@question -> Ask JJ if this is necessary.
+        witness.push_data(Buffer::from(vec![0; 8].as_slice())); //@question -> Ask JJ if this is necessary.
 
         Input {
             sequence,
@@ -80,5 +84,18 @@ impl Default for Input {
             witness: Witness::new(),
             sequence: u32::max_value(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_encoding() {
+        let mut input = Input::new_coinbase("");
+
+        dbg!(hex::encode(input.encode()));
+        dbg!(hex::encode(input.witness.encode()));
     }
 }
