@@ -72,7 +72,7 @@ impl Transaction {
             size += 40;
         }
 
-        size = VarInt::from(self.outputs.len()).encoded_size() as usize;
+        size += VarInt::from(self.outputs.len()).encoded_size() as usize;
         for output in self.outputs.iter() {
             size += output.size();
         }
