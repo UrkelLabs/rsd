@@ -185,3 +185,13 @@ pub fn calculate_reward(height: u32, _interval: u32, fees: u32) -> Amount {
     // reward + Amount::from_doos(self.fees as u64)
     reward.checked_add(Amount::from_doos(fees as u64)).unwrap() //@todo not sure best way to handle here.
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_get_reward() {
+        let reward = calculate_reward(391, 0, 0);
+    }
+}

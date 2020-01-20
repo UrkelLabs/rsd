@@ -18,7 +18,7 @@ pub fn get_reward(height: u32, interval: u32) -> Amount {
 
     let exponent = 2u32.pow(halvings);
 
-    let amount = (BASE_REWARD as f32 / exponent as f32).floor() * 1_000f32;
+    let amount = (BASE_REWARD as f32 / exponent as f32).floor() * 1_000_000f32;
 
     Amount::from_doos(amount as u64)
 }
