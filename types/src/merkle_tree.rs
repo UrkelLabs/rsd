@@ -26,7 +26,7 @@ impl MerkleTree {
             let mut sh = Blake2b::new(32);
             let mut output = [0; 32];
             sh.input(&[0x00]);
-            sh.input_str(&hash.to_string());
+            sh.input(&hash.to_array());
             sh.result(&mut output);
             let leaf = Hash::from(output);
             nodes.push(leaf);
