@@ -40,9 +40,6 @@ pub fn consensus_verify_pow(hash: &Hash, bits: u32) -> bool {
     //TODO implement deref for hash then we don't need to array here.
     let hash_number = Uint256::from_big_endian(&hash.to_array());
 
-    dbg!(&hash_number);
-    dbg!(&target);
-
     hash_number <= target
 }
 
