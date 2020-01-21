@@ -42,7 +42,7 @@ impl MerkleTree {
         while (len > 1) {
             //@todo is this necessary?
             //const hashes = [consensus.ZERO_HASH];
-            let mut hashes = Vec::new();
+            // let mut hashes = Vec::new();
             // steps.push(nodes[1]);
 
             // for (let i = 2; i < len; i +=2) {
@@ -71,7 +71,7 @@ impl MerkleTree {
                 nodes.push(Hash::from(output));
             }
 
-            nodes = hashes;
+            // nodes = hashes;
             len = nodes.len();
         }
 
