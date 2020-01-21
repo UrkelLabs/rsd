@@ -1,4 +1,4 @@
-use extended_primitives::Buffer;
+use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 
 use super::{
@@ -129,9 +129,11 @@ impl Decodable for Covenant {
 }
 
 impl Encodable for Covenant {
+    //@todo going to code this as getVarsize right now, can change later.
     fn size(&self) -> usize {
-        match self {
-            Covenant::None => 0,
+        let mut size = 1;
+        size += match self {
+            Covenant::None => VarInt::from(0 as u64).encoded_size() as usize,
             Covenant::Claim(claim) => claim.size(),
             Covenant::Open(open) => open.size(),
             Covenant::Bid(bid) => bid.size(),
@@ -143,7 +145,8 @@ impl Encodable for Covenant {
             Covenant::Transfer(transfer) => transfer.size(),
             Covenant::Finalize(finalize) => finalize.size(),
             Covenant::Revoke(revoke) => revoke.size(),
-        }
+        };
+        size
     }
 
     fn encode(&self) -> Buffer {

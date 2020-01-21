@@ -161,3 +161,35 @@ impl Decodable for Transaction {
         })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use handshake_types::Amount;
+
+    #[test]
+    fn test_tx_hashing() {
+        let mut input = Input::new_coinbase("");
+        let mut outputs = Vec::new();
+        input.sequence = 0;
+        let mut inputs = Vec::new();
+        inputs.push(input);
+        let output = Output::new(
+            Amount::from_doos(2_000_000_000),
+            "ss1qm7zqc7h820qrxd3f72v9jhvmvgzf69cenz8hkn"
+                .parse()
+                .unwrap(),
+        );
+
+        outputs.push(output);
+        // let tx: Transaction = Default::default();
+        let tx = Transaction::new(391, inputs, outputs);
+        let raw = tx.encode();
+        dbg!(hex::encode(&raw));
+        dbg!(tx.get_base_size());
+        let base = tx.get_base_size();
+        dbg!(hex::encode(&raw[..base]));
+        dbg!(&tx);
+        dbg!(hex::encode(tx.hash()));
+    }
+}
