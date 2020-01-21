@@ -55,7 +55,13 @@ impl Transaction {
         sh.input(&witness);
         sh.result(&mut output);
 
-        Hash::from(output)
+        let mut final_output = [0; 32];
+        let mut sh = Blake2b::new(32);
+        sh.input(&self.hash().to_array());
+        sh.input(&output);
+        sh.result(&mut final_output);
+
+        Hash::from(final_output)
     }
 
     pub fn is_null(&self) -> bool {
@@ -188,8 +194,11 @@ mod test {
         dbg!(hex::encode(&raw));
         dbg!(tx.get_base_size());
         let base = tx.get_base_size();
+        let witness = raw.len() - base;
+        dbg!(witness);
         dbg!(hex::encode(&raw[..base]));
         dbg!(&tx);
         dbg!(hex::encode(tx.hash()));
+        dbg!(hex::encode(tx.witness_hash()));
     }
 }
