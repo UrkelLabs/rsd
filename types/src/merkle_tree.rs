@@ -33,33 +33,21 @@ impl MerkleTree {
         }
 
         let mut len = nodes.len();
+        let mut i = 0;
 
-        if (len == 0) {
+        if len == 0 {
             nodes.push(sentinel);
             return MerkleTree { steps: nodes };
         }
 
-        while (len > 1) {
-            //@todo is this necessary?
-            //const hashes = [consensus.ZERO_HASH];
-            // let mut hashes = Vec::new();
-            // steps.push(nodes[1]);
+        while len > 1 {
+            for j in (0..len).step_by(2) {
+                let l = j;
+                let r = j + 1;
 
-            // for (let i = 2; i < len; i +=2) {
-            for i in 2..len {
-                if i % 2 != 0 {
-                    continue;
-                }
+                let left = nodes[i + l];
 
-                let left = nodes[i];
-
-                let mut right;
-
-                if (i + 1 < len) {
-                    right = nodes[i + 1];
-                } else {
-                    right = sentinel;
-                }
+                let right = if r < len { nodes[i + r] } else { sentinel };
 
                 let mut sh = Blake2b::new(32);
                 let mut output = [0; 32];
@@ -71,8 +59,10 @@ impl MerkleTree {
                 nodes.push(Hash::from(output));
             }
 
-            // nodes = hashes;
-            len = nodes.len();
+            i += len;
+
+            //@todo review
+            len = (len + 1) >> 1;
         }
 
         MerkleTree { steps: nodes }
