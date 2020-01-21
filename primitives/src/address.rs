@@ -1,4 +1,4 @@
-use bech32::u5;
+use bech32::{u5, FromBase32};
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use std::str::FromStr;
@@ -161,18 +161,15 @@ impl FromStr for Address {
 // //TODO eq, partial eq, ordering.
 
 fn version_hash_from_bech32(data: Vec<u5>) -> (u8, Buffer) {
-    let version = data[0].to_u8();
+    let (version, d) = data.split_at(1);
+
+    let hash_data = Vec::from_base32(d).unwrap();
+
     let mut hash = Buffer::new();
 
-    let iter = data.iter();
-
-    for (i, elem) in iter.enumerate() {
-        if i == 0 {
-            continue;
-        }
-
-        hash.write_u8(elem.to_u8());
+    for elem in hash_data.iter() {
+        hash.write_u8(*elem);
     }
 
-    (version, hash)
+    (version[0].to_u8(), hash)
 }
