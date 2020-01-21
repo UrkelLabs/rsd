@@ -1,6 +1,7 @@
 use crate::block_template::json::BlockTemplateJSON;
 use crate::{Address, BlockTemplate, Input, Output, Transaction};
 use extended_primitives::{Buffer, Hash, Uint256};
+use handshake_encoding::Decodable;
 use handshake_protocol::consensus::get_reward;
 use handshake_types::{Amount, MerkleTree, Time};
 use hex::FromHex;
@@ -80,12 +81,12 @@ impl BlockTemplateBuilder {
         self.with_transactions_hex(txs)
     }
 
-    pub fn with_transactions_hex(mut self, txs: Vec<String>) -> Self {
+    pub fn with_transactions_hex(mut self, txs: Vec<Buffer>) -> Self {
         let mut templte_txs = Vec::new();
         for tx in txs.iter() {
             //@todo need to add counts to self.
             //@todo also need to add fees to self as well.
-            templte_txs.push(Transaction::from_hex(&tx).unwrap());
+            templte_txs.push(Transaction::decode(&mut tx.clone()).unwrap());
         }
 
         self.transactions = templte_txs;

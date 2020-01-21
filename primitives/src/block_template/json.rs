@@ -1,4 +1,4 @@
-use extended_primitives::{Hash, Uint256};
+use extended_primitives::{Buffer, Hash, Uint256};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -62,7 +62,7 @@ pub struct CoinbaseAux {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TransactionEntry {
     //@todo can we do buffer here? and deserialize from hex.
-    pub data: String,
+    pub data: Buffer,
     pub txid: Hash,
     pub hash: Hash,
     pub depends: Vec<Hash>,
