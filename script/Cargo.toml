@@ -12,4 +12,5 @@ edition = "2018"
 handshake-encoding = { path="../encoding" }
 
 #Known External
-extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
+extended-primitives = "^0.2.0"
+
