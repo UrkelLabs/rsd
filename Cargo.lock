@@ -282,7 +282,15 @@ version = "0.1.0"
 source = "git+https://github.com/UrkelLabs/extended-primitives.git#9e3ad309f607d0161da5181359dd837b76b95db2"
 dependencies = [
  "hex",
- "serde",
+]
+
+[[package]]
+name = "extended-primitives"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0dcd41075140323579197b3ebb08e60aebe454a3b2e85f776df87fefc1c36d2"
+dependencies = [
+ "hex",
 ]
 
 [[package]]
@@ -530,7 +538,7 @@ dependencies = [
 name = "handshake-encoding"
 version = "0.1.0"
 dependencies = [
- "extended-primitives",
+ "extended-primitives 0.2.0",
 ]
 
 [[package]]
@@ -548,7 +556,7 @@ dependencies = [
  "bitflags",
  "brontide",
  "chrono",
- "extended-primitives",
+ "extended-primitives 0.1.0",
  "fasthash",
  "futures-preview",
  "futures-timer 0.2.1",
@@ -568,7 +576,7 @@ version = "0.1.0"
 dependencies = [
  "bech32",
  "cryptoxide",
- "extended-primitives",
+ "extended-primitives 0.2.0",
  "handshake-encoding",
  "handshake-protocol",
  "handshake-script",
@@ -585,7 +593,7 @@ dependencies = [
 name = "handshake-protocol"
 version = "0.1.0"
 dependencies = [
- "extended-primitives",
+ "extended-primitives 0.2.0",
  "handshake-types",
 ]
 
@@ -593,7 +601,7 @@ dependencies = [
 name = "handshake-script"
 version = "0.1.0"
 dependencies = [
- "extended-primitives",
+ "extended-primitives 0.2.0",
  "handshake-encoding",
 ]
 
@@ -610,7 +618,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "cryptoxide",
- "extended-primitives",
+ "extended-primitives 0.2.0",
  "handshake-encoding",
  "hex",
  "pds",
@@ -882,7 +890,7 @@ name = "pds"
 version = "0.1.0"
 source = "git+https://github.com/UrkelLabs/pds.git#2003e14340324c34fb59e7d8243feba93b5fe334"
 dependencies = [
- "extended-primitives",
+ "extended-primitives 0.1.0",
  "fasthash",
 ]
 

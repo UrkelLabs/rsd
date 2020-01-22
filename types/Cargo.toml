@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["kilpatty <sean@urkel.io>"]
 edition = "2018"
 
+[features]
+default = []
+
+# The only reason we put PDS behind a feature right is now is that it requires static linking to c++ libraries.
+# This breaks some builds on CI, so I'm going to feature flag this for now, until we can get a murmur3 impl in Rust
+# and drop the requirement on fasthash in pds.
+bloom = ["pds"]
+
 [dependencies]
 # Internal
 handshake-encoding = { path="../encoding"}
@@ -11,7 +19,7 @@ handshake-encoding = { path="../encoding"}
 # Known External
 # extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
 extended-primitives = "^0.2.0"
-pds = { git="https://github.com/UrkelLabs/pds.git" }
+pds = { git="https://github.com/UrkelLabs/pds.git", optional = true }
 
 # Unknown External
 hex = "0.3.2"

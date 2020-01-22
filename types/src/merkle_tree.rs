@@ -73,6 +73,23 @@ impl MerkleTree {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_merkle_tree_generation() {
+        let leaves = vec![
+            Hash::from("6ccc9037d0be8b70207fd3e384565743d3925e27e0923a57fa7fc51f8e951ba9"),
+            Hash::from("fa43aa977aa4f3e4ff8bbd8c05fa81eb0d00320bfca60f0acb129e8e696d99cf"),
+        ];
+
+        let tree = MerkleTree::from_leaves(leaves);
+
+        dbg!(tree.get_root());
+    }
+}
+
 //@todo JSON serialization.
 //@todo binary serialization.
 //@todo testing
