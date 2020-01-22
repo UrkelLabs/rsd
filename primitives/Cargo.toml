@@ -13,7 +13,8 @@ handshake-encoding = { path="../encoding" }
 handshake-script = { path="../script" }
 
 # Known External
-extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git", features=["serialization"] }
+# extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git", features=["serialization"] }
+extended-primitives = "^0.2.0"
 
 # Unknown External
 cryptoxide = "0.1.1"
