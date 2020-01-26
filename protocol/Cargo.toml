@@ -10,6 +10,6 @@ edition = "2018"
 handshake-types = { path="../types" }
 
 # Known External
-extended-primitives = "^0.2.0"
+extended-primitives = "^0.3.1"
 
 

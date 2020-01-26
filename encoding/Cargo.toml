@@ -8,5 +8,6 @@ edition = "2018"
 
 # Known External
 # extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
-extended-primitives = "^0.2.0"
+extended-primitives = "^0.3.1"
+encodings = "0.1.0"
 

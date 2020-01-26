@@ -51,6 +51,7 @@ impl Decodable for Output {
         //TODO make from doos
         let value = Amount::from_doos(buffer.read_u64()?);
         let address = Address::decode(buffer)?;
+        dbg!("error");
         let covenant = Covenant::decode(buffer)?;
 
         Ok(Output {

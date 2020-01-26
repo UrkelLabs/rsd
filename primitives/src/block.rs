@@ -50,3 +50,5 @@ impl Decodable for Block {
         Ok(Block { header, txdata })
     }
 }
+
+//@todo fromHex/toHex

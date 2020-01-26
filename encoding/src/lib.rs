@@ -1,3 +1,4 @@
+use encodings::hex::FromHexError;
 use extended_primitives::{Buffer, BufferError};
 use std::fmt;
 
@@ -6,7 +7,14 @@ pub enum DecodingError {
     //Overall wrapper type to enclose decoding errors.
     InvalidData(String),
     Buffer(BufferError),
+    Hex(FromHexError),
     UnknownInventory,
+}
+
+impl From<FromHexError> for DecodingError {
+    fn from(e: FromHexError) -> DecodingError {
+        DecodingError::Hex(e)
+    }
 }
 
 impl From<BufferError> for DecodingError {
@@ -20,6 +28,7 @@ impl fmt::Display for DecodingError {
         match *self {
             DecodingError::InvalidData(ref e) => write!(f, "Invalid Data: {}", e),
             DecodingError::Buffer(ref e) => write!(f, "Buffer Error: {}", e),
+            DecodingError::Hex(ref e) => write!(f, "Hex Error: {}", e),
             DecodingError::UnknownInventory => write!(f, "Unknown Inventory Type"),
         }
     }

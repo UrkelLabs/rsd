@@ -74,6 +74,8 @@ impl Decodable for Covenant {
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
         let covenant_type = buffer.read_u8()?;
 
+        dbg!(&covenant_type);
+
         match covenant_type {
             //@todo I don't think this will work. Still need to read the varint on this one.
             0 => Ok(Covenant::None),
@@ -176,6 +178,13 @@ impl Encodable for Covenant {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_covenant_encoding() {
+        let empty_cov = Covenant::None;
+
+        dbg!(empty_cov.encode());
+    }
 
     #[test]
     fn test_covenant_is_name() {

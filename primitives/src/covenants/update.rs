@@ -1,16 +1,18 @@
 use extended_primitives::{Buffer, Hash, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
-use handshake_types::{NameHash};
+use handshake_types::NameHash;
 
 //@todo formatting, and I think common functions to_hex, from_hex.
 //@todo testing.
 //@when I say formatting I mean Debug and to_string functions.
 
+// #[derive(Debug, Clone)]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UpdateCovenant {
     pub name_hash: NameHash,
     pub height: u32,
     //TODO See Above.
+    // pub record_data: Buffer,
     pub record_data: String,
     //TODO see above.
     pub block_hash: Hash,
@@ -51,6 +53,7 @@ impl Encodable for UpdateCovenant {
         //Record Data
         buffer.write_varint(self.record_data.len());
         buffer.write_str(&self.record_data);
+        // buffer.write_var_bytes(&self.record_data);
 
         //Block Hash
         buffer.write_varint(32);
@@ -76,6 +79,7 @@ impl Decodable for UpdateCovenant {
         //Record Data
         let record_length = buffer.read_varint()?;
         let record_data = buffer.read_string(record_length.as_u64() as usize)?;
+        // let record_data = Buffer::from(buffer.read_var_bytes()?);
 
         buffer.read_varint()?;
         let block_hash = buffer.read_hash()?;

@@ -12,5 +12,5 @@ edition = "2018"
 handshake-encoding = { path="../encoding" }
 
 #Known External
-extended-primitives = "^0.2.0"
+extended-primitives = "^0.3.1"
 

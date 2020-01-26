@@ -1,15 +1,11 @@
 // use crypto::sha2::Sha256;
-
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
-use sha3::{Digest as _Digest, Sha3_256};
-use sp800_185::KMac;
-
-use extended_primitives::{Buffer, Hash, Uint256};
+use encodings::hex::{FromHex, FromHexError, ToHex};
+use extended_primitives::{Buffer, Hash};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_protocol::consensus::consensus_verify_pow;
-
-//@todo FromHex and ToHex for this - pull from our encodings library.
+use sha3::{Digest as _Digest, Sha3_256};
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
@@ -172,29 +168,6 @@ impl BlockHeader {
         //Pass to consensus code.
         consensus_verify_pow(&self.hash(), self.bits)
     }
-
-    //Just use fromHex, toHex here. Today let's get to this.
-    //pub fn as_hex(&self) -> String {
-    //    //Use prehead here.
-    //    let mut buffer = Buffer::new();
-
-    //    buffer.write_u32(self.version);
-    //    buffer.write_hash(self.prev_blockhash);
-    //    buffer.write_hash(self.merkle_root);
-    //    buffer.write_hash(self.witness_root);
-    //    buffer.write_hash(self.tree_root);
-    //    buffer.write_hash(self.filter_root);
-    //    buffer.write_hash(self.reserved_root);
-    //    buffer.write_u64(self.time);
-    //    //This will switch to write_compact when we convert the type TODO
-    //    buffer.write_u32(self.bits);
-    //    // buffer.write_u64(self.nonce as u64);
-    //    //Think we might want to change this to write Bytes or write Buffer.
-    //    //Because nonce is not *technically* a hash
-    //    buffer.write_u256(self.nonce);
-
-    //    buffer.to_hex()
-    //}
 }
 
 impl Encodable for BlockHeader {
@@ -266,10 +239,23 @@ impl Decodable for BlockHeader {
     }
 }
 
+impl ToHex for BlockHeader {
+    fn to_hex(&self) -> String {
+        self.encode().to_hex()
+    }
+}
+
+impl FromHex for BlockHeader {
+    type Error = DecodingError;
+
+    fn from_hex<T: AsRef<[u8]>>(hex: T) -> std::result::Result<Self, Self::Error> {
+        BlockHeader::decode(&mut Buffer::from_hex(hex)?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hex::FromHex;
 
     // #[test]
     // fn test_block_header_hex_default() {
@@ -305,24 +291,32 @@ mod tests {
         //We will need to pass a legit block for this test TODO
         let block_header = BlockHeader {
             version: 1,
-            prev_block: Hash::from(
+            prev_block: Hash::from_hex(
                 "0101010101010101010101010101010101010101010101010101010101010101",
-            ),
-            merkle_root: Hash::from(
+            )
+            .unwrap(),
+            merkle_root: Hash::from_hex(
                 "0101010101010101010101010101010101010101010101010101010101010101",
-            ),
-            witness_root: Hash::from(
+            )
+            .unwrap(),
+            witness_root: Hash::from_hex(
                 "0202020202020202020202020202020202020202020202020202020202020202",
-            ),
-            tree_root: Hash::from(
+            )
+            .unwrap(),
+            tree_root: Hash::from_hex(
                 "0303030303030303030303030303030303030303030303030303030303030303",
-            ),
-            reserved_root: Hash::from(
+            )
+            .unwrap(),
+            reserved_root: Hash::from_hex(
                 "0404040404040404040404040404040404040404040404040404040404040404",
-            ),
+            )
+            .unwrap(),
             extra_nonce: Buffer::from_hex("050505050505050505050505050505050505050505050505")
                 .unwrap(),
-            mask: Hash::from("0606060606060606060606060606060606060606060606060606060606060606"),
+            mask: Hash::from_hex(
+                "0606060606060606060606060606060606060606060606060606060606060606",
+            )
+            .unwrap(),
             time: 0,
             bits: 0,
             nonce: 0,

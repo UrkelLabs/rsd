@@ -1,10 +1,10 @@
 use crate::block_template::json::BlockTemplateJSON;
 use crate::{Address, BlockTemplate, Input, Output, Transaction};
+use encodings::FromHex;
 use extended_primitives::{Buffer, Hash, Uint256};
 use handshake_encoding::Decodable;
 use handshake_protocol::consensus::get_reward;
 use handshake_types::{Amount, MerkleTree, Time};
-use hex::FromHex;
 //@todo make a builder for block template, since so many of the options are likely not easy to do
 //via just a simple new function. Have "new" cover the most basic of options, and then the builder
 //does anything more extensive.
@@ -52,7 +52,7 @@ impl BlockTemplateBuilder {
 
     pub fn with_json(mut self, template: BlockTemplateJSON) -> Self {
         let mut bits_bytes = [0u8; 4];
-        bits_bytes.copy_from_slice(&hex::decode(template.bits).unwrap());
+        bits_bytes.copy_from_slice(&Vec::from_hex(template.bits).unwrap());
         let bits = u32::from_be_bytes(bits_bytes);
 
         self.prev_block = template.previous_blockhash;

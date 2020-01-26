@@ -95,7 +95,7 @@ mod test {
     fn test_encoding() {
         let mut input = Input::new_coinbase("");
 
-        dbg!(hex::encode(input.encode()));
-        dbg!(hex::encode(input.witness.encode()));
+        // dbg!(hex::encode(input.encode()));
+        // dbg!(hex::encode(input.witness.encode()));
     }
 }

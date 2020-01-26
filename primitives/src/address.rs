@@ -62,6 +62,8 @@ impl Payload {
     }
 }
 
+//@todo Impl FromHex, ToHex
+
 //@todo ideally implement copy here, but we need to implement it for Buffer, and we really need to
 //look into performance degration there.
 // #[derive(PartialEq, Clone, Debug, Copy)]
