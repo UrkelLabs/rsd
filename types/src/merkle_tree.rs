@@ -18,7 +18,7 @@ impl MerkleTree {
 
         let mut output = [0; 32];
         let mut sh = Blake2b::new(32);
-        let bytes = [0; 32];
+        let bytes = [0];
         sh.input(&bytes);
         sh.result(&mut output);
         let sentinel = Hash::from(output);
