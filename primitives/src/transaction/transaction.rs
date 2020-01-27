@@ -146,28 +146,23 @@ impl Decodable for Transaction {
 
         let version = buffer.read_u32()?;
 
-        dbg!("error");
         let input_count = buffer.read_varint()?;
         for _ in 0..input_count.as_u64() {
             inputs.push(Input::decode(buffer)?);
         }
 
-        dbg!("error");
         let output_count = buffer.read_varint()?;
         for _ in 0..output_count.as_u64() {
             outputs.push(Output::decode(buffer)?);
         }
 
-        dbg!("error");
         let locktime = buffer.read_u32()?;
 
-        dbg!("error");
         //TODO varint as usize please.
         for i in 0..input_count.as_u64() {
             let witness = Witness::decode(buffer)?;
             inputs[i as usize].witness = witness;
         }
-        dbg!("error");
 
         Ok(Transaction {
             version,
