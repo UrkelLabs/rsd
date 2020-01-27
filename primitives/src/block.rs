@@ -1,5 +1,6 @@
 use crate::BlockHeader;
 use crate::Transaction;
+use encodings::hex::{FromHex, ToHex};
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 
@@ -51,4 +52,16 @@ impl Decodable for Block {
     }
 }
 
-//@todo fromHex/toHex
+impl ToHex for Block {
+    fn to_hex(&self) -> String {
+        self.encode().to_hex()
+    }
+}
+
+impl FromHex for Block {
+    type Error = DecodingError;
+
+    fn from_hex<T: AsRef<[u8]>>(hex: T) -> std::result::Result<Self, Self::Error> {
+        Block::decode(&mut Buffer::from_hex(hex)?)
+    }
+}
