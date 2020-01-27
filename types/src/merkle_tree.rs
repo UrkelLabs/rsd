@@ -6,6 +6,7 @@ use hex::FromHex;
 //Merkle tree type for use in Handshake
 //@todo
 //@todo can I generalize this entire thing?
+#[derive(Debug)]
 pub struct MerkleTree {
     steps: Vec<Hash>,
 }
@@ -40,6 +41,7 @@ impl MerkleTree {
             return MerkleTree { steps: nodes };
         }
 
+        // len = 3;
         while len > 1 {
             for j in (0..len).step_by(2) {
                 let l = j;
