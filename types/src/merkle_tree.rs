@@ -65,7 +65,7 @@ impl MerkleTree {
 
             //@todo review
             // len = (len + 1) >>> 1;
-            len /= 2;
+            len = (len + 1) / 2;
         }
 
         MerkleTree { steps: nodes }
