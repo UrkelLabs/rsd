@@ -18,7 +18,7 @@ pub struct ClaimCovenant {
 
 impl Encodable for ClaimCovenant {
     fn size(&self) -> usize {
-        let mut size = 0;
+        let mut size = VarInt::from(6 as u64).encoded_size() as usize;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
         let name_length = VarInt::from(self.name.len() as u64);

@@ -14,7 +14,7 @@ pub struct RevokeCovenant {
 
 impl Encodable for RevokeCovenant {
     fn size(&self) -> usize {
-        let mut size = 0;
+        let mut size = VarInt::from(2 as u64).encoded_size() as usize;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
 

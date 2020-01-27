@@ -16,7 +16,7 @@ pub struct RenewCovenant {
 
 impl Encodable for RenewCovenant {
     fn size(&self) -> usize {
-        let mut size = 0;
+        let mut size = VarInt::from(3 as u64).encoded_size() as usize;
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
         let block_length = VarInt::from(32 as u64);

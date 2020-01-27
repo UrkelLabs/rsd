@@ -18,7 +18,7 @@ pub struct TransferCovenant {
 
 impl Encodable for TransferCovenant {
     fn size(&self) -> usize {
-        let mut size = 0;
+        let mut size = VarInt::from(4 as u64).encoded_size() as usize;
         //TODO because all these values are below 252
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
