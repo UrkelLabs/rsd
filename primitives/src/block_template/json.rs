@@ -46,8 +46,8 @@ pub struct BlockTemplateJSON {
     pub coinbase_aux: CoinbaseAux,
     #[serde(rename = "coinbasevalue")]
     pub coinbase_value: u64,
-    pub claims: Vec<String>,
-    pub airdrops: Vec<String>,
+    pub claims: Vec<ClaimEntry>,
+    pub airdrops: Vec<AirdropEntry>,
     pub transactions: Vec<TransactionEntry>,
 }
 
@@ -61,7 +61,6 @@ pub struct CoinbaseAux {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TransactionEntry {
-    //@todo can we do buffer here? and deserialize from hex.
     pub data: Buffer,
     pub txid: Hash,
     pub hash: Hash,
@@ -69,4 +68,38 @@ pub struct TransactionEntry {
     pub fee: u32,
     pub sigops: u32,
     pub weight: u32,
+}
+
+//@todo everything that is Hex should probably be a string.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ClaimEntry {
+    data: String,
+    name: String,
+    name_hash: Hash,
+    version: u8,
+    hash: Hash,
+    //@todo check type here.
+    value: u32,
+    //@todo check type here.
+    fee: u32,
+    weak: bool,
+    commit_hash: Hash,
+    commit_height: u32,
+    //@todo check type here.
+    weight: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AirdropEntry {
+    data: String,
+    //@todo check all these types
+    position: u32,
+    version: u8,
+    //@todo see the best way to parse this from the address hash.
+    address: String,
+    //@todo check all these types
+    value: u32,
+    fee: u32,
+    rate: u32,
+    weak: bool,
 }
