@@ -86,7 +86,7 @@ impl BlockTemplateBuilder {
         for tx in txs.iter() {
             //@todo need to add counts to self.
             //@todo also need to add fees to self as well.
-            templte_txs.push(Transaction::decode(&mut tx.clone()).unwrap());
+            templte_txs.push(Transaction::from_hex(&tx.clone()).unwrap());
         }
 
         self.transactions = templte_txs;
