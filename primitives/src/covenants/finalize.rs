@@ -11,9 +11,9 @@ pub struct FinalizeCovenant {
     pub name_hash: NameHash,
     pub height: u32,
     pub name: Name,
-    //TODO see above.
-    pub flags: String,
-    //TODO see above
+    pub flags: u8,
+    pub claimed: u32,
+    pub renewals: u32,
     pub block_hash: Hash,
 }
 
@@ -23,13 +23,17 @@ impl Encodable for FinalizeCovenant {
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
         let name_length = VarInt::from(self.name.len() as u64);
-        let flags_length = VarInt::from(self.flags.len() as u64);
+        let flags_length = VarInt::from(1 as u64);
+        let claimed_length = VarInt::from(4 as u64);
+        let renewals_length = VarInt::from(4 as u64);
         let block_hash_length = VarInt::from(32 as u64);
 
         size += name_hash_length.encoded_size() as usize;
         size += height_length.encoded_size() as usize;
         size += name_length.encoded_size() as usize;
         size += flags_length.encoded_size() as usize;
+        size += renewals_length.encoded_size() as usize;
+        size += claimed_length.encoded_size() as usize;
         size += block_hash_length.encoded_size() as usize;
 
         size
@@ -39,7 +43,7 @@ impl Encodable for FinalizeCovenant {
         let mut buffer = Buffer::new();
 
         buffer.write_u8(10);
-        buffer.write_varint(5);
+        buffer.write_varint(7);
 
         //Name Hash
         //Hashes are 32 bytes
@@ -55,8 +59,16 @@ impl Encodable for FinalizeCovenant {
         buffer.write_str(&self.name);
 
         //Record Data
-        buffer.write_varint(self.flags.len());
-        buffer.write_str(&self.flags);
+        buffer.write_varint(1);
+        buffer.write_u8(self.flags);
+
+        //Claimed
+        buffer.write_varint(4);
+        buffer.write_u32(self.claimed);
+
+        //Renewals
+        buffer.write_varint(4);
+        buffer.write_u32(self.renewals);
 
         //Block Hash
         buffer.write_varint(32);
@@ -70,7 +82,7 @@ impl Decodable for FinalizeCovenant {
     type Err = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
-        //5
+        //7
         buffer.read_varint()?;
 
         buffer.read_varint()?;
@@ -84,8 +96,14 @@ impl Decodable for FinalizeCovenant {
         let name = buffer.read_string(name_length.as_u64() as usize)?;
 
         //Flags
-        let flags_length = buffer.read_varint()?;
-        let flags = buffer.read_string(flags_length.as_u64() as usize)?;
+        buffer.read_varint()?;
+        let flags = buffer.read_u8()?;
+
+        buffer.read_varint()?;
+        let claimed = buffer.read_u32()?;
+
+        buffer.read_varint()?;
+        let renewals = buffer.read_u32()?;
 
         buffer.read_varint()?;
         let block_hash = buffer.read_hash()?;
@@ -95,6 +113,8 @@ impl Decodable for FinalizeCovenant {
             height,
             name: Name::from(name),
             flags,
+            claimed,
+            renewals,
             block_hash,
         })
     }

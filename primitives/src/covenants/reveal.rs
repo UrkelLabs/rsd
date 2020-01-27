@@ -1,4 +1,4 @@
-use extended_primitives::{Buffer, Uint256, VarInt};
+use extended_primitives::{Buffer, Hash, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_types::NameHash;
 
@@ -10,7 +10,8 @@ use handshake_types::NameHash;
 pub struct RevealCovenant {
     pub name_hash: NameHash,
     pub height: u32,
-    pub nonce: Uint256,
+    //@todo review if this needs to be a Hash or Uint256
+    pub nonce: Hash,
 }
 
 impl Encodable for RevealCovenant {
@@ -45,7 +46,7 @@ impl Encodable for RevealCovenant {
 
         //Nonce
         buffer.write_varint(32);
-        buffer.write_u256(self.nonce);
+        buffer.write_hash(self.nonce);
 
         buffer
     }
@@ -65,7 +66,7 @@ impl Decodable for RevealCovenant {
         let height = buffer.read_u32()?;
 
         buffer.read_varint()?;
-        let nonce = buffer.read_u256()?;
+        let nonce = buffer.read_hash()?;
 
         Ok(RevealCovenant {
             name_hash,

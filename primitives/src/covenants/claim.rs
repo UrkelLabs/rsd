@@ -1,4 +1,4 @@
-use extended_primitives::{Buffer, VarInt};
+use extended_primitives::{Buffer, Hash, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_types::{Name, NameHash};
 
@@ -10,7 +10,10 @@ pub struct ClaimCovenant {
     pub name_hash: NameHash,
     pub height: u32,
     pub name: Name,
-    pub flags: String,
+    //@todo would love to see an Enum here.
+    pub flags: u8,
+    pub commit_hash: Hash,
+    pub commit_height: u32,
 }
 
 impl Encodable for ClaimCovenant {
@@ -19,12 +22,16 @@ impl Encodable for ClaimCovenant {
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
         let name_length = VarInt::from(self.name.len() as u64);
-        let flags_length = VarInt::from(self.flags.len() as u64);
+        let flags_length = VarInt::from(1 as u64);
+        let commit_hash_length = VarInt::from(32 as u64);
+        let commit_height_length = VarInt::from(4 as u64);
 
         size += name_hash_length.encoded_size() as usize;
         size += height_length.encoded_size() as usize;
         size += name_length.encoded_size() as usize;
         size += flags_length.encoded_size() as usize;
+        size += commit_hash_length.encoded_size() as usize;
+        size += commit_height_length.encoded_size() as usize;
 
         size
     }
@@ -33,7 +40,7 @@ impl Encodable for ClaimCovenant {
         let mut buffer = Buffer::new();
 
         buffer.write_u8(1);
-        buffer.write_varint(4);
+        buffer.write_varint(6);
 
         //Name Hash
         //Hashes are 32 bytes
@@ -49,8 +56,16 @@ impl Encodable for ClaimCovenant {
         buffer.write_str(&self.name);
 
         //Flags
-        buffer.write_varint(self.flags.len());
-        buffer.write_str(&self.flags);
+        buffer.write_varint(1);
+        buffer.write_u8(self.flags);
+
+        //Commit Hash
+        buffer.write_varint(32);
+        buffer.write_hash(self.commit_hash);
+
+        //Commit Height
+        buffer.write_varint(4);
+        buffer.write_u32(self.commit_height);
 
         buffer
     }
@@ -73,14 +88,22 @@ impl Decodable for ClaimCovenant {
         //TODO check
         let name = buffer.read_string(name_length.as_u64() as usize)?;
 
-        let flags_length = buffer.read_varint()?;
-        let flags = buffer.read_string(flags_length.as_u64() as usize)?;
+        buffer.read_varint()?;
+        let flags = buffer.read_u8()?;
+
+        buffer.read_varint()?;
+        let commit_hash = buffer.read_hash()?;
+
+        buffer.read_varint()?;
+        let commit_height = buffer.read_u32()?;
 
         Ok(ClaimCovenant {
             name_hash,
             height,
             name: Name::from(name),
             flags,
+            commit_hash,
+            commit_height,
         })
     }
 }

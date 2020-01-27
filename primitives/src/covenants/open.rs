@@ -39,7 +39,6 @@ impl Encodable for OpenCovenant {
         buffer.write_varint(3);
 
         //Name Hash
-        //Hashes are 32 bytes
         buffer.write_varint(32);
         buffer.write_hash(self.name_hash);
 

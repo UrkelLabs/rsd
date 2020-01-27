@@ -1,7 +1,8 @@
+use crate::address::Payload;
 use crate::Address;
 use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
-use handshake_types::{NameHash};
+use handshake_types::NameHash;
 
 //@todo formatting, and I think common functions to_hex, from_hex.
 //@todo testing.
@@ -11,7 +12,7 @@ use handshake_types::{NameHash};
 pub struct TransferCovenant {
     pub name_hash: NameHash,
     pub height: u32,
-    pub version: u32,
+    pub version: u8,
     pub address: Address,
 }
 
@@ -21,8 +22,8 @@ impl Encodable for TransferCovenant {
         //TODO because all these values are below 252
         let name_hash_length = VarInt::from(32 as u64);
         let height_length = VarInt::from(4 as u64);
-        let version_length = VarInt::from(4 as u64);
-        let address_length = VarInt::from(self.address.size() as u64);
+        let version_length = VarInt::from(1 as u64);
+        let address_length = VarInt::from(self.address.hash.as_hash().len() as u64);
 
         size += name_hash_length.encoded_size() as usize;
         size += height_length.encoded_size() as usize;
@@ -48,12 +49,11 @@ impl Encodable for TransferCovenant {
         buffer.write_u32(self.height);
 
         //Version
-        buffer.write_varint(4);
-        buffer.write_u32(self.version);
+        buffer.write_varint(1);
+        buffer.write_u8(self.version);
 
         //Block Hash
-        buffer.write_varint(self.address.size() as usize);
-        buffer.extend(self.address.encode());
+        buffer.write_var_bytes(self.address.hash.as_hash());
 
         buffer
     }
@@ -73,10 +73,15 @@ impl Decodable for TransferCovenant {
         let height = buffer.read_u32()?;
 
         buffer.read_varint()?;
-        let version = buffer.read_u32()?;
+        let version = buffer.read_u8()?;
 
         buffer.read_varint()?;
-        let address = Address::decode(buffer)?;
+        let hash = Buffer::from(buffer.read_var_bytes()?);
+        //@todo not sure if I'm a fan of this. Maybe just keep it as a addr_hash in the struct.
+        let address = Address {
+            version: 0,
+            hash: Payload::from_hash(hash).unwrap(),
+        };
 
         Ok(TransferCovenant {
             name_hash,

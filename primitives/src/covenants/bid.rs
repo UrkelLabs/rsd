@@ -12,6 +12,8 @@ pub struct BidCovenant {
     pub height: u32,
     pub name: Name,
     //TODO *might* want to make this a BidHash, but that'll be a later impl
+    //*blind hash*
+    //Also rename
     pub hash: Hash,
 }
 

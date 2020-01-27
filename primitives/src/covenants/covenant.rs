@@ -1,3 +1,4 @@
+use encodings::hex::{FromHex, ToHex};
 use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 
@@ -174,16 +175,206 @@ impl Encodable for Covenant {
     }
 }
 
+impl ToHex for Covenant {
+    fn to_hex(&self) -> String {
+        self.encode().to_hex()
+    }
+}
+
+impl FromHex for Covenant {
+    type Error = DecodingError;
+
+    fn from_hex<T: AsRef<[u8]>>(hex: T) -> std::result::Result<Self, Self::Error> {
+        Covenant::decode(&mut Buffer::from_hex(hex)?)
+    }
+}
+
 //TODO finish up testing the global functions.
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Address;
+    use extended_primitives::Hash;
+    use handshake_types::{Name, NameHash};
 
     #[test]
     fn test_covenant_encoding() {
         let empty_cov = Covenant::None;
 
-        dbg!(empty_cov.encode());
+        assert_eq!(empty_cov.to_hex(), "0000");
+
+        //@todo maybe move this into the claim file?
+        let claim_cov = Covenant::Claim(ClaimCovenant {
+            //@todo would be nice to just have this from name. So name.to_hash()
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            name: Name::from("satoshi".to_owned()),
+            flags: 0,
+            commit_hash: Hash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            commit_height: 150,
+        });
+
+        assert_eq!(claim_cov.to_hex(), "0106207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000077361746f7368690100207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070496000000");
+
+        let open_cov = Covenant::Open(OpenCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 0,
+            name: Name::from("satoshi".to_owned()),
+        });
+
+        assert_eq!(open_cov.to_hex(), "0203207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070400000000077361746f736869");
+
+        let bid_cov = Covenant::Bid(BidCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            name: Name::from("satoshi".to_owned()),
+            //@todo automatically generate this blind.
+            hash: Hash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+        });
+
+        assert_eq!(bid_cov.to_hex(), "0304207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000077361746f736869207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007");
+
+        let reveal_cov = Covenant::Reveal(RevealCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            nonce: Hash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+        });
+
+        assert_eq!(reveal_cov.to_hex(), "0403207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007");
+
+        let redeem_cov = Covenant::Redeem(RedeemCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+        });
+
+        assert_eq!(
+            redeem_cov.to_hex(),
+            "0502207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000"
+        );
+
+        let register_cov = Covenant::Register(RegisterCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            record_data: Buffer::from_hex("0000").unwrap(),
+            block_hash: Hash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+        });
+
+        assert_eq!(
+            register_cov.to_hex(),
+            "0604207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000020000207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007"
+        );
+
+        let update_cov = Covenant::Update(UpdateCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            record_data: Buffer::from_hex("0000").unwrap(),
+        });
+
+        assert_eq!(
+            update_cov.to_hex(),
+            "0703207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000020000"
+        );
+
+        let renew_cov = Covenant::Renew(RenewCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            block_hash: Hash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+        });
+
+        assert_eq!(
+            renew_cov.to_hex(),
+            "0803207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007"
+        );
+
+        let transfer_cov = Covenant::Transfer(TransferCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            version: 0,
+            address: "hs1qd42hrldu5yqee58se4uj6xctm7nk28r70e84vx"
+                .parse()
+                .unwrap(),
+        });
+
+        assert_eq!(
+            transfer_cov.to_hex(),
+            "0904207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda900704640000000100146d5571fdbca1019cd0f0cd792d1b0bdfa7651c7e"
+        );
+
+        let finalize_cov = Covenant::Finalize(FinalizeCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+            name: Name::from("satoshi".to_owned()),
+            flags: 0,
+            claimed: 200,
+            renewals: 300,
+            block_hash: Hash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+        });
+
+        assert_eq!(
+            finalize_cov.to_hex(),
+            "0a07207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000077361746f736869010004c8000000042c010000207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007"
+        );
+
+        let revoke_cov = Covenant::Revoke(RevokeCovenant {
+            name_hash: NameHash::from_hex(
+                "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
+            )
+            .unwrap(),
+            height: 100,
+        });
+
+        assert_eq!(
+            revoke_cov.to_hex(),
+            "0b02207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070464000000"
+        );
     }
 
     #[test]

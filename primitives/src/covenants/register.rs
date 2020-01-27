@@ -12,7 +12,7 @@ pub struct RegisterCovenant {
     pub height: u32,
     //TODO verify type. I believe this is a serialized encoding of the data insert. We should make
     //this a cutom type.
-    pub record_data: String,
+    pub record_data: Buffer,
     //TODO not sure if we want to have BlockHash custom type, but it might make sense.
     //Otherwise Hash here is just fine
     pub block_hash: Hash,
@@ -51,8 +51,7 @@ impl Encodable for RegisterCovenant {
         buffer.write_u32(self.height);
 
         //Record Data
-        buffer.write_varint(self.record_data.len());
-        buffer.write_str(&self.record_data);
+        buffer.write_var_bytes(&self.record_data);
 
         //Block Hash
         buffer.write_varint(32);
@@ -76,8 +75,7 @@ impl Decodable for RegisterCovenant {
         let height = buffer.read_u32()?;
 
         //Record Data
-        let record_length = buffer.read_varint()?;
-        let record_data = buffer.read_string(record_length.as_u64() as usize)?;
+        let record_data = Buffer::from(buffer.read_var_bytes()?);
 
         buffer.read_varint()?;
         let block_hash = buffer.read_hash()?;
