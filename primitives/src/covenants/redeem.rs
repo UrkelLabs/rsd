@@ -20,6 +20,8 @@ impl Encodable for RedeemCovenant {
 
         size += name_hash_length.encoded_size() as usize;
         size += height_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
 
         size
     }

@@ -232,6 +232,7 @@ mod tests {
         });
 
         assert_eq!(open_cov.to_hex(), "0203207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070400000000077361746f736869");
+        dbg!(open_cov.size());
 
         let bid_cov = Covenant::Bid(BidCovenant {
             name_hash: NameHash::from_hex(

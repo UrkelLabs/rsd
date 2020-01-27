@@ -30,6 +30,10 @@ impl Encodable for BidCovenant {
         size += height_length.encoded_size() as usize;
         size += name_length.encoded_size() as usize;
         size += hash_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
+        size += self.name.len();
+        size += 32;
 
         size
     }

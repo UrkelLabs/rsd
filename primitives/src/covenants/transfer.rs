@@ -29,6 +29,10 @@ impl Encodable for TransferCovenant {
         size += height_length.encoded_size() as usize;
         size += version_length.encoded_size() as usize;
         size += address_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
+        size += 1;
+        size += self.address.hash.as_hash().len();
 
         size
     }

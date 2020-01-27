@@ -35,6 +35,13 @@ impl Encodable for FinalizeCovenant {
         size += renewals_length.encoded_size() as usize;
         size += claimed_length.encoded_size() as usize;
         size += block_hash_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
+        size += self.name.len();
+        size += 1;
+        size += 4;
+        size += 4;
+        size += 32;
 
         size
     }

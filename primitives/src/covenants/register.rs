@@ -31,6 +31,10 @@ impl Encodable for RegisterCovenant {
         size += height_length.encoded_size() as usize;
         size += name_length.encoded_size() as usize;
         size += block_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
+        size += self.record_data.len();
+        size += 32;
 
         size
     }

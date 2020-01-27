@@ -32,6 +32,12 @@ impl Encodable for ClaimCovenant {
         size += flags_length.encoded_size() as usize;
         size += commit_hash_length.encoded_size() as usize;
         size += commit_height_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
+        size += self.name.len();
+        size += 1;
+        size += 32;
+        size += 4;
 
         size
     }

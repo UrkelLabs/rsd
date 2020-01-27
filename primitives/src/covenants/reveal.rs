@@ -25,6 +25,9 @@ impl Encodable for RevealCovenant {
         size += name_hash_length.encoded_size() as usize;
         size += height_length.encoded_size() as usize;
         size += nonce_length.encoded_size() as usize;
+        size += 32;
+        size += 4;
+        size += 32;
 
         size
     }
