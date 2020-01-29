@@ -64,7 +64,9 @@ pub struct TransactionEntry {
     pub data: Buffer,
     pub txid: Hash,
     pub hash: Hash,
-    pub depends: Vec<Hash>,
+    //@todo check types here.... Looks to be returning a u32 and not a hash.
+    // pub depends: Vec<Hash>,
+    pub depends: Vec<u32>,
     pub fee: u32,
     pub sigops: u32,
     pub weight: u32,
