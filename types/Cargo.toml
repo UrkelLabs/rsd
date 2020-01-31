@@ -17,11 +17,10 @@ bloom = ["pds"]
 handshake-encoding = { path="../encoding"}
 
 # Known External
-# extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
 extended-primitives = "^0.3.1"
 pds = { git="https://github.com/UrkelLabs/pds.git", optional = true }
+encodings = "0.1.0"
 
 # Unknown External
-hex = "0.3.2"
 chrono = "0.4"
 cryptoxide = "0.1.1"

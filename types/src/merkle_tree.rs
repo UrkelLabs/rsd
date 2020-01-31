@@ -1,7 +1,6 @@
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
 use extended_primitives::Hash;
-use hex::FromHex;
 
 //Merkle tree type for use in Handshake
 //@todo
@@ -79,12 +78,15 @@ impl MerkleTree {
 #[cfg(test)]
 mod test {
     use super::*;
+    use encodings::hex::FromHex;
 
     #[test]
     fn test_merkle_tree_generation() {
         let leaves = vec![
-            Hash::from("6ccc9037d0be8b70207fd3e384565743d3925e27e0923a57fa7fc51f8e951ba9"),
-            Hash::from("fa43aa977aa4f3e4ff8bbd8c05fa81eb0d00320bfca60f0acb129e8e696d99cf"),
+            Hash::from_hex("6ccc9037d0be8b70207fd3e384565743d3925e27e0923a57fa7fc51f8e951ba9")
+                .unwrap(),
+            Hash::from_hex("fa43aa977aa4f3e4ff8bbd8c05fa81eb0d00320bfca60f0acb129e8e696d99cf")
+                .unwrap(),
         ];
 
         let tree = MerkleTree::from_leaves(leaves);
