@@ -14,7 +14,7 @@ bloom = ["pds"]
 
 [dependencies]
 # Internal
-handshake-encoding = { path="../encoding"}
+handshake-encoding = { version="0.1.1", path="../encoding"}
 
 # Known External
 extended-primitives = "^0.3.1"
