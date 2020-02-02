@@ -3,6 +3,8 @@ name = "handshake-types"
 version = "0.1.1"
 authors = ["kilpatty <sean@urkel.io>"]
 edition = "2018"
+license = "MIT"
+description = "Handshake types"
 
 [features]
 default = []
