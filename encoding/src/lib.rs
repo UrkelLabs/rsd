@@ -1,4 +1,4 @@
-use encodings::hex::FromHexError;
+use encodings::hex::{FromHex, FromHexError, ToHex};
 use extended_primitives::{Buffer, BufferError};
 use std::fmt;
 
@@ -47,3 +47,5 @@ where
     type Err;
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err>;
 }
+
+//@todo would be nice to impl a proc_macro here for Hex.
