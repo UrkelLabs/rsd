@@ -647,7 +647,7 @@ dependencies = [
 
 [[package]]
 name = "handshake-encoding"
-version = "0.1.2-alpha.0"
+version = "0.1.2"
 dependencies = [
  "encodings",
  "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
