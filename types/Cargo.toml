@@ -18,7 +18,7 @@ handshake-encoding = { path="../encoding"}
 
 # Known External
 extended-primitives = "^0.3.1"
-pds = { git="https://github.com/UrkelLabs/pds.git", optional = true }
+pds = { version="0.2.0", optional = true }
 encodings = "0.1.0"
 
 # Unknown External
