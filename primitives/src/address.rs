@@ -104,7 +104,6 @@ impl Decodable for Address {
     type Err = DecodingError;
 
     fn decode(buffer: &mut Buffer) -> Result<Self, Self::Err> {
-        dbg!(&buffer);
         let version = buffer.read_u8()?;
 
         if version > 31 {
