@@ -89,6 +89,8 @@ impl BlockTemplateBuilder {
             airdrops.push(BlockAirdrop::from_entry(airdrop.clone()));
         }
 
+        self.airdrops = airdrops;
+
         self.with_transactions_hex(txs)
     }
 
