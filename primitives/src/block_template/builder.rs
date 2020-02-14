@@ -1,3 +1,4 @@
+use crate::block_template::airdrop::BlockAirdrop;
 use crate::block_template::json::BlockTemplateJSON;
 use crate::{Address, BlockTemplate, Input, Output, Transaction};
 use encodings::FromHex;
@@ -35,7 +36,7 @@ pub struct BlockTemplateBuilder {
     //@todo should probably come from network constants.
     pub interval: u32,
     //@todo Probably move to Amount type.
-    pub fees: u32,
+    pub fees: u64,
     pub merkle_root: Hash,
     pub witness_root: Hash,
     pub tree_root: Hash,
@@ -43,6 +44,7 @@ pub struct BlockTemplateBuilder {
     pub coinbase: Transaction,
     pub mask: Hash,
     pub transactions: Vec<Transaction>,
+    pub airdrops: Vec<BlockAirdrop>,
 }
 
 impl BlockTemplateBuilder {
@@ -75,7 +77,16 @@ impl BlockTemplateBuilder {
         // self.transactions = template.transactions;
         let mut txs = Vec::new();
         for tx in template.transactions.iter() {
+            self.fees += tx.fee as u64;
+
             txs.push(tx.data.clone());
+        }
+
+        let mut airdrops = Vec::new();
+        for airdrop in template.airdrops.iter() {
+            self.fees += airdrop.fee;
+
+            airdrops.push(BlockAirdrop::from_entry(airdrop.clone()));
         }
 
         self.with_transactions_hex(txs)
@@ -116,8 +127,18 @@ impl BlockTemplateBuilder {
         );
         outputs.push(output);
 
-        //@todo add claims and proofs
-        //
+        for proof in self.airdrops.iter() {
+            let input = Input::new_airdrop(&proof.blob);
+            inputs.push(input);
+
+            let output = Output::new(
+                Amount::from_doos(proof.value - proof.fee),
+                proof.address.clone(),
+            );
+            outputs.push(output);
+        }
+
+        //@todo add claims
         self.coinbase = Transaction::new(locktime, inputs, outputs);
 
         //Not needed I believe. @todo
@@ -177,14 +198,15 @@ impl BlockTemplateBuilder {
             coinbase: self.coinbase,
             mask: self.mask,
             transactions: self.transactions,
+            airdrops: self.airdrops,
         }
     }
 }
 
-pub fn calculate_reward(height: u32, _interval: u32, fees: u32) -> Amount {
+pub fn calculate_reward(height: u32, _interval: u32, fees: u64) -> Amount {
     let reward = get_reward(height, 170_000);
     // reward + Amount::from_doos(self.fees as u64)
-    reward.checked_add(Amount::from_doos(fees as u64)).unwrap() //@todo not sure best way to handle here.
+    reward.checked_add(Amount::from_doos(fees)).unwrap() //@todo not sure best way to handle here.
 }
 
 #[cfg(test)]

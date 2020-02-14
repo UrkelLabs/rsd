@@ -93,15 +93,15 @@ pub struct ClaimEntry {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AirdropEntry {
-    data: String,
+    pub data: String,
     //@todo check all these types
-    position: u32,
-    version: u8,
+    pub position: usize,
+    pub version: u8,
     //@todo see the best way to parse this from the address hash.
-    address: String,
+    pub address: String,
     //@todo check all these types
-    value: u32,
-    fee: u32,
-    rate: u32,
-    weak: bool,
+    pub value: u64,
+    pub fee: u64,
+    pub rate: f64,
+    pub weak: bool,
 }

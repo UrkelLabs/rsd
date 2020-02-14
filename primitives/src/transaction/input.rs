@@ -1,4 +1,5 @@
 use crate::Outpoint;
+use encodings::FromHex;
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_script::Witness;
@@ -24,12 +25,32 @@ impl Input {
         thread_rng().fill(&mut random_bytes);
 
         let mut flag_buffer = Buffer::new();
-        flag_buffer.fill(0, 20);
         flag_buffer.write_str(flags);
+
+        if flags.as_bytes().len() < 20 {
+            flag_buffer.fill(0, 20 - flags.as_bytes().len());
+        }
 
         witness.push_data(flag_buffer);
         witness.push_data(Buffer::from(random_bytes.to_vec()));
         witness.push_data(Buffer::from(vec![0; 8].as_slice())); //@question -> Ask JJ if this is necessary.
+
+        Input {
+            sequence,
+            witness,
+            prevout,
+        }
+    }
+
+    pub fn new_airdrop(blob: &Buffer) -> Input {
+        let prevout = Outpoint::default();
+        let mut witness = Witness::new();
+        let sequence = u32::max_value();
+
+        //@todo at some point try to remove this unwrap.
+        let blob_data = Buffer::from_hex(blob).unwrap();
+
+        witness.push_data(blob_data);
 
         Input {
             sequence,

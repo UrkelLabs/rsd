@@ -1,9 +1,12 @@
+pub mod airdrop;
 pub mod builder;
 pub mod json;
 use crate::{Address, Input, Output, Transaction};
+use airdrop::BlockAirdrop;
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
 use extended_primitives::{Buffer, Hash, Uint256};
+
 use json::BlockTemplateJSON;
 // use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_protocol::consensus::get_reward;
@@ -39,7 +42,7 @@ pub struct BlockTemplate {
     //@todo should probably come from network constants.
     pub interval: u32,
     //@todo Probably move to Amount type.
-    pub fees: u32,
+    pub fees: u64,
     pub merkle_root: Hash,
     pub witness_root: Hash,
     pub tree_root: Hash,
@@ -47,6 +50,7 @@ pub struct BlockTemplate {
     pub coinbase: Transaction,
     pub mask: Hash,
     pub transactions: Vec<Transaction>,
+    pub airdrops: Vec<BlockAirdrop>,
     //@todo need airdrop claim (sp)?
     // pub claims: Vec<AirdropClaim>,
     //@todo need airdrop proof type.
