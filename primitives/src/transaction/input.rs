@@ -47,10 +47,7 @@ impl Input {
         let mut witness = Witness::new();
         let sequence = u32::max_value();
 
-        //@todo at some point try to remove this unwrap.
-        let blob_data = Buffer::from_hex(blob).unwrap();
-
-        witness.push_data(blob_data);
+        witness.push_data(blob.clone());
 
         Input {
             sequence,

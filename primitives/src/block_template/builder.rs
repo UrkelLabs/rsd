@@ -130,17 +130,13 @@ impl BlockTemplateBuilder {
         outputs.push(output);
 
         for proof in self.airdrops.iter() {
-            dbg!("1");
             let input = Input::new_airdrop(&proof.blob);
-            dbg!("2");
             inputs.push(input);
 
-            dbg!("3");
             let output = Output::new(
                 Amount::from_doos(proof.value - proof.fee),
                 proof.address.clone(),
             );
-            dbg!("4");
             outputs.push(output);
         }
 
