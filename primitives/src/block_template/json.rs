@@ -79,14 +79,14 @@ pub struct ClaimEntry {
     name: String,
     namehash: Hash,
     version: u8,
-    hash: Hash,
+    hash: Buffer,
     //@todo check type here.
     value: u32,
     //@todo check type here.
     fee: u32,
     weak: bool,
     #[serde(rename = "commitHash")]
-    commit_hash: Buffer,
+    commit_hash: Hash,
     #[serde(rename = "commitHeight")]
     commit_height: u32,
     //@todo check type here.
