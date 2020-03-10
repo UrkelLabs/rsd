@@ -346,18 +346,21 @@ impl<'de> Deserialize<'de> for Covenant {
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Type => {
+                            dbg!("Type");
                             if covenant_type.is_some() {
                                 return Err(de::Error::duplicate_field("type"));
                             }
                             covenant_type = Some(map.next_value()?);
                         }
                         Field::Action => {
+                            dbg!("Action");
                             if action.is_some() {
                                 return Err(de::Error::duplicate_field("action"));
                             }
                             action = Some(map.next_value()?);
                         }
                         Field::Items => {
+                            dbg!("Items");
                             if items.is_some() {
                                 return Err(de::Error::duplicate_field("items"));
                             }
