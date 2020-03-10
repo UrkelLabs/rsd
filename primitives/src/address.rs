@@ -1,7 +1,15 @@
 use bech32::{u5, FromBase32};
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
+use std::fmt;
 use std::str::FromStr;
+
+#[cfg(feature = "json")]
+use encodings::ToHex;
+#[cfg(feature = "json")]
+use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+#[cfg(feature = "json")]
+use serde::ser::SerializeStruct;
 
 #[derive(Debug)]
 pub enum AddressError {
@@ -21,6 +29,14 @@ impl From<bech32::Error> for AddressError {
 impl From<AddressError> for DecodingError {
     fn from(e: AddressError) -> DecodingError {
         DecodingError::InvalidData(format!("{:?}", e))
+    }
+}
+
+impl fmt::Display for AddressError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            _ => formatter.write_str("todo"),
+        }
     }
 }
 
@@ -76,6 +92,10 @@ pub struct Address {
 }
 
 impl Address {
+    pub fn new(version: u8, hash: Payload) -> Self {
+        Address { version, hash }
+    }
+
     //TODO
     // pub fn is_null(&self) -> bool {
     //     self.hash.is_null()
@@ -174,4 +194,115 @@ fn version_hash_from_bech32(data: Vec<u5>) -> (u8, Buffer) {
     }
 
     (version[0].to_u8(), hash)
+}
+
+#[cfg(feature = "json")]
+impl serde::Serialize for Address {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        let mut state = s.serialize_struct("Address", 2)?;
+        state.serialize_field("version", &self.version)?;
+        state.serialize_field("hash", &self.hash.as_hash().to_hex())?;
+        state.end()
+    }
+}
+
+#[cfg(feature = "json")]
+impl<'de> Deserialize<'de> for Address {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        enum Field {
+            Version,
+            Hash,
+        };
+
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`version` or `hash`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "version" => Ok(Field::Version),
+                            "hash" => Ok(Field::Hash),
+                            _ => Err(de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
+        struct AddressVisitor;
+
+        impl<'de> Visitor<'de> for AddressVisitor {
+            type Value = Address;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Address")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Address, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let version = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                let hash_raw: Buffer = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+
+                let hash = Payload::from_hash(hash_raw).map_err(de::Error::custom)?;
+
+                Ok(Address::new(version, hash))
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Address, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut version = None;
+                let mut hash = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Version => {
+                            if version.is_some() {
+                                return Err(de::Error::duplicate_field("version"));
+                            }
+                            version = Some(map.next_value()?);
+                        }
+                        Field::Hash => {
+                            if hash.is_some() {
+                                return Err(de::Error::duplicate_field("hash"));
+                            }
+                            hash = Some(map.next_value()?);
+                        }
+                    }
+                }
+                let version = version.ok_or_else(|| de::Error::missing_field("version"))?;
+                let hash_raw = hash.ok_or_else(|| de::Error::missing_field("hash"))?;
+
+                let hash = Payload::from_hash(hash_raw).map_err(de::Error::custom)?;
+                Ok(Address::new(version, hash))
+            }
+        }
+
+        const FIELDS: &'static [&'static str] = &["version", "hash"];
+        deserializer.deserialize_struct("Address", FIELDS, AddressVisitor)
+    }
 }
