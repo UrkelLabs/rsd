@@ -85,9 +85,9 @@ pub struct ClaimEntry {
     //@todo check type here.
     fee: u32,
     weak: bool,
-    #[serde(rename="commitHash")]
-    commit_hash: Hash,
-    #[serde(rename="commitHeight")]
+    #[serde(rename = "commitHash")]
+    commit_hash: Buffer,
+    #[serde(rename = "commitHeight")]
     commit_height: u32,
     //@todo check type here.
     weight: u32,
