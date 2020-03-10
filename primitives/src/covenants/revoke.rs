@@ -1,6 +1,6 @@
 use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
-use handshake_types::{NameHash};
+use handshake_types::NameHash;
 
 //@todo formatting, and I think common functions to_hex, from_hex.
 //@todo testing.
@@ -10,6 +10,22 @@ use handshake_types::{NameHash};
 pub struct RevokeCovenant {
     pub name_hash: NameHash,
     pub height: u32,
+}
+
+impl RevokeCovenant {
+    pub fn get_items(&self) -> Vec<Buffer> {
+        let mut items = Vec::new();
+
+        let mut buffer = Buffer::new();
+        buffer.write_hash(self.name_hash);
+        items.push(buffer);
+
+        let mut buffer = Buffer::new();
+        buffer.write_u32(self.height);
+        items.push(buffer);
+
+        items
+    }
 }
 
 impl Encodable for RevokeCovenant {

@@ -17,6 +17,30 @@ pub struct BidCovenant {
     pub hash: Hash,
 }
 
+impl BidCovenant {
+    pub fn get_items(&self) -> Vec<Buffer> {
+        let mut items = Vec::new();
+
+        let mut buffer = Buffer::new();
+        buffer.write_hash(self.name_hash);
+        items.push(buffer);
+
+        let mut buffer = Buffer::new();
+        buffer.write_u32(self.height);
+        items.push(buffer);
+
+        let mut buffer = Buffer::new();
+        buffer.write_str(&self.name);
+        items.push(buffer);
+
+        let mut buffer = Buffer::new();
+        buffer.write_hash(self.hash);
+        items.push(buffer);
+
+        items
+    }
+}
+
 impl Encodable for BidCovenant {
     fn size(&self) -> usize {
         let mut size = VarInt::from(4 as u64).encoded_size() as usize;

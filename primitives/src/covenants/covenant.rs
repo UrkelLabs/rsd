@@ -7,6 +7,11 @@ use super::{
     RenewCovenant, RevealCovenant, RevokeCovenant, TransferCovenant, UpdateCovenant,
 };
 
+#[cfg(feature = "json")]
+use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+#[cfg(feature = "json")]
+use serde::ser::SerializeStruct;
+
 /// A Handshake covenant, which is a method of changing name state on the chain.
 #[derive(PartialEq, Clone, Debug)]
 pub enum Covenant {
@@ -65,6 +70,57 @@ impl Covenant {
             Covenant::Open(_) => false,
             Covenant::Redeem(_) => false,
             _ => true,
+        }
+    }
+
+    pub fn get_type(&self) -> u8 {
+        match self {
+            Covenant::None => 0,
+            Covenant::Claim(_) => 1,
+            Covenant::Bid(_) => 2,
+            Covenant::Open(_) => 3,
+            Covenant::Reveal(_) => 4,
+            Covenant::Redeem(_) => 5,
+            Covenant::Register(_) => 6,
+            Covenant::Update(_) => 7,
+            Covenant::Renew(_) => 8,
+            Covenant::Transfer(_) => 9,
+            Covenant::Finalize(_) => 10,
+            Covenant::Revoke(_) => 11,
+        }
+    }
+
+    pub fn get_action(&self) -> String {
+        match self {
+            Covenant::None => String::from("NONE"),
+            Covenant::Claim(_) => String::from("CLAIM"),
+            Covenant::Bid(_) => String::from("BID"),
+            Covenant::Open(_) => String::from("OPEN"),
+            Covenant::Reveal(_) => String::from("REVEAL"),
+            Covenant::Redeem(_) => String::from("REDEEM"),
+            Covenant::Register(_) => String::from("REGISTER"),
+            Covenant::Update(_) => String::from("UPDATE"),
+            Covenant::Renew(_) => String::from("RENEW"),
+            Covenant::Transfer(_) => String::from("TRANSFER"),
+            Covenant::Finalize(_) => String::from("FINALIZE"),
+            Covenant::Revoke(_) => String::from("REVOKE"),
+        }
+    }
+
+    pub fn get_items(&self) -> Vec<Buffer> {
+        match self {
+            Covenant::None => Vec::new(),
+            Covenant::Claim(claim) => claim.get_items(),
+            Covenant::Bid(bid) => bid.get_items(),
+            Covenant::Open(open) => open.get_items(),
+            Covenant::Reveal(reveal) => reveal.get_items(),
+            Covenant::Redeem(redeem) => redeem.get_items(),
+            Covenant::Register(register) => register.get_items(),
+            Covenant::Update(update) => update.get_items(),
+            Covenant::Renew(renew) => renew.get_items(),
+            Covenant::Transfer(transfer) => transfer.get_items(),
+            Covenant::Finalize(finalize) => finalize.get_items(),
+            Covenant::Revoke(revoke) => revoke.get_items(),
         }
     }
 }
@@ -188,6 +244,17 @@ impl FromHex for Covenant {
 
     fn from_hex<T: AsRef<[u8]>>(hex: T) -> std::result::Result<Self, Self::Error> {
         Covenant::decode(&mut Buffer::from_hex(hex)?)
+    }
+}
+
+#[cfg(feature = "json")]
+impl serde::Serialize for Covenant {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        let mut state = s.serialize_struct("Covenant", 2)?;
+        state.serialize_field("type", &self.get_type())?;
+        state.serialize_field("hash", &self.get_action())?;
+        state.serialize_field("items", &self.get_items())?;
+        state.end()
     }
 }
 
