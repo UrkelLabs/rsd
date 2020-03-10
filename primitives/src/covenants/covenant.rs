@@ -372,7 +372,7 @@ impl<'de> Deserialize<'de> for Covenant {
 
                 let covenant_type =
                     covenant_type.ok_or_else(|| de::Error::missing_field("covenant_type"))?;
-                let action = action.ok_or_else(|| de::Error::missing_field("action"))?;
+                let action: String = action.ok_or_else(|| de::Error::missing_field("action"))?;
                 let items = items.ok_or_else(|| de::Error::missing_field("items"))?;
 
                 Ok(Covenant::from_items(covenant_type, items))
