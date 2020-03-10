@@ -358,6 +358,7 @@ impl<'de> Deserialize<'de> for Covenant {
                                 return Err(de::Error::duplicate_field("action"));
                             }
                             action = Some(map.next_value()?);
+                            dbg!(action);
                         }
                         Field::Items => {
                             dbg!("Items");
