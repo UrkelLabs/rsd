@@ -46,6 +46,26 @@ impl ClaimCovenant {
 
         items
     }
+
+    //@todo this should really return a result.
+    pub fn from_items(mut items: Vec<Buffer>) -> ClaimCovenant {
+        let name_len = items[2].len();
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        let name = items[2].read_string(name_len).unwrap();
+        let flags = items[3].read_u8().unwrap();
+        let commit_hash = items[4].read_hash().unwrap();
+        let commit_height = items[5].read_u32().unwrap();
+
+        ClaimCovenant {
+            name_hash,
+            height,
+            name: Name::from(name),
+            flags,
+            commit_hash,
+            commit_height,
+        }
+    }
 }
 
 impl Encodable for ClaimCovenant {

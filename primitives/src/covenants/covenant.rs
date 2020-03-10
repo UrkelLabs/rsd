@@ -1,6 +1,7 @@
 use encodings::hex::{FromHex, ToHex};
 use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
+use std::fmt;
 
 use super::{
     BidCovenant, ClaimCovenant, FinalizeCovenant, OpenCovenant, RedeemCovenant, RegisterCovenant,
@@ -30,6 +31,14 @@ pub enum Covenant {
 }
 
 impl Covenant {
+    pub fn from_items(covenant_type: u8, items: Vec<Buffer>) -> Covenant {
+        match covenant_type {
+            0 => Covenant::None,
+            1 => Covenant::Claim(ClaimCovenant::from_items(items)),
+            _ => Covenant::None,
+        }
+    }
+
     pub fn is_name(&self) -> bool {
         match self {
             Covenant::None => false,
@@ -252,9 +261,122 @@ impl serde::Serialize for Covenant {
     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
         let mut state = s.serialize_struct("Covenant", 2)?;
         state.serialize_field("type", &self.get_type())?;
-        state.serialize_field("hash", &self.get_action())?;
+        state.serialize_field("action", &self.get_action())?;
         state.serialize_field("items", &self.get_items())?;
         state.end()
+    }
+}
+
+#[cfg(feature = "json")]
+impl<'de> Deserialize<'de> for Covenant {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        enum Field {
+            Type,
+            Action,
+            Items,
+        };
+
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`type` or `action` or `items`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "type" => Ok(Field::Type),
+                            "action" => Ok(Field::Action),
+                            "items" => Ok(Field::Items),
+                            _ => Err(de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
+        struct CovenantVisitor;
+
+        impl<'de> Visitor<'de> for CovenantVisitor {
+            type Value = Covenant;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Covenant")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Covenant, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let covenant_type = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                let action = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+                let items = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(2, &self))?;
+
+                Ok(Covenant::from_items(covenant_type, items))
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Covenant, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut covenant_type = None;
+                let mut action = None;
+                let mut items = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Type => {
+                            if covenant_type.is_some() {
+                                return Err(de::Error::duplicate_field("type"));
+                            }
+                            covenant_type = Some(map.next_value()?);
+                        }
+                        Field::Action => {
+                            if action.is_some() {
+                                return Err(de::Error::duplicate_field("action"));
+                            }
+                            action = Some(map.next_value()?);
+                        }
+                        Field::Items => {
+                            if items.is_some() {
+                                return Err(de::Error::duplicate_field("items"));
+                            }
+                            items = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let covenant_type =
+                    covenant_type.ok_or_else(|| de::Error::missing_field("covenant_type"))?;
+                let action = action.ok_or_else(|| de::Error::missing_field("action"))?;
+                let items = items.ok_or_else(|| de::Error::missing_field("items"))?;
+
+                Ok(Covenant::from_items(covenant_type, items))
+            }
+        }
+
+        const FIELDS: &'static [&'static str] = &["type", "action", "items"];
+        deserializer.deserialize_struct("Covenant", FIELDS, CovenantVisitor)
     }
 }
 
