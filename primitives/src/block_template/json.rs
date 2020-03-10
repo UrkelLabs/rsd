@@ -77,7 +77,7 @@ pub struct TransactionEntry {
 pub struct ClaimEntry {
     data: String,
     name: String,
-    name_hash: Hash,
+    namehash: Hash,
     version: u8,
     hash: Hash,
     //@todo check type here.
@@ -85,7 +85,9 @@ pub struct ClaimEntry {
     //@todo check type here.
     fee: u32,
     weak: bool,
+    #[serde(rename="commitHash")]
     commit_hash: Hash,
+    #[serde(rename="commitHeight")]
     commit_height: u32,
     //@todo check type here.
     weight: u32,
