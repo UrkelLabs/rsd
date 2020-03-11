@@ -31,6 +31,20 @@ impl UpdateCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> UpdateCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+
+        let record_length = items[2].len();
+        let record_data = Buffer::from(items[2].read_bytes(record_length).unwrap());
+
+        UpdateCovenant {
+            name_hash,
+            height,
+            record_data,
+        }
+    }
 }
 
 impl Encodable for UpdateCovenant {

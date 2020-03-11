@@ -51,6 +51,28 @@ impl FinalizeCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> FinalizeCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        //Name
+        let name_length = items[2].len();
+        let name = items[2].read_string(name_length).unwrap();
+        let flags = items[3].read_u8().unwrap();
+        let claimed = items[3].read_u32().unwrap();
+        let renewals = items[4].read_u32().unwrap();
+        let block_hash = items[5].read_hash().unwrap();
+
+        FinalizeCovenant {
+            name_hash,
+            height,
+            name: Name::from(name),
+            flags,
+            claimed,
+            renewals,
+            block_hash,
+        }
+    }
 }
 
 impl Encodable for FinalizeCovenant {

@@ -38,6 +38,28 @@ impl TransferCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> TransferCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        let version = items[2].read_u8().unwrap();
+
+        let hash_len = items[3].len();
+        let hash = Buffer::from(items[3].read_bytes(hash_len).unwrap());
+
+        //@todo not sure if I'm a fan of this. Maybe just keep it as a addr_hash in the struct.
+        let address = Address {
+            version: 0,
+            hash: Payload::from_hash(hash).unwrap(),
+        };
+
+        TransferCovenant {
+            name_hash,
+            height,
+            version,
+            address,
+        }
+    }
 }
 
 impl Encodable for TransferCovenant {

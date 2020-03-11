@@ -39,6 +39,21 @@ impl BidCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> BidCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        let name_length = items[2].len();
+        let name = items[2].read_string(name_length).unwrap();
+        let hash = items[3].read_hash().unwrap();
+
+        BidCovenant {
+            name_hash,
+            height,
+            name: Name::from(name),
+            hash,
+        }
+    }
 }
 
 impl Encodable for BidCovenant {

@@ -32,6 +32,18 @@ impl RenewCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> RenewCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        let block_hash = items[2].read_hash().unwrap();
+
+        RenewCovenant {
+            name_hash,
+            height,
+            block_hash,
+        }
+    }
 }
 
 impl Encodable for RenewCovenant {

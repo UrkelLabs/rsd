@@ -32,6 +32,18 @@ impl RevealCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> RevealCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        let nonce = items[2].read_hash().unwrap();
+
+        RevealCovenant {
+            name_hash,
+            height,
+            nonce,
+        }
+    }
 }
 
 impl Encodable for RevealCovenant {

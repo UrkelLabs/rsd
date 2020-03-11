@@ -31,10 +31,21 @@ pub enum Covenant {
 }
 
 impl Covenant {
+    //Make this return a result so that _ can be an error.
     pub fn from_items(covenant_type: u8, items: Vec<Buffer>) -> Covenant {
         match covenant_type {
             0 => Covenant::None,
             1 => Covenant::Claim(ClaimCovenant::from_items(items)),
+            2 => Covenant::Open(OpenCovenant::from_items(items)),
+            3 => Covenant::Bid(BidCovenant::from_items(items)),
+            4 => Covenant::Reveal(RevealCovenant::from_items(items)),
+            5 => Covenant::Redeem(RedeemCovenant::from_items(items)),
+            6 => Covenant::Register(RegisterCovenant::from_items(items)),
+            7 => Covenant::Update(UpdateCovenant::from_items(items)),
+            8 => Covenant::Renew(RenewCovenant::from_items(items)),
+            9 => Covenant::Transfer(TransferCovenant::from_items(items)),
+            10 => Covenant::Finalize(FinalizeCovenant::from_items(items)),
+            11 => Covenant::Revoke(RevokeCovenant::from_items(items)),
             _ => Covenant::None,
         }
     }
@@ -346,22 +357,18 @@ impl<'de> Deserialize<'de> for Covenant {
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Type => {
-                            dbg!("Type");
                             if covenant_type.is_some() {
                                 return Err(de::Error::duplicate_field("type"));
                             }
                             covenant_type = Some(map.next_value()?);
                         }
                         Field::Action => {
-                            dbg!("Action");
                             if action.is_some() {
                                 return Err(de::Error::duplicate_field("action"));
                             }
                             action = Some(map.next_value()?);
-                            dbg!(&action);
                         }
                         Field::Items => {
-                            dbg!("Items");
                             if items.is_some() {
                                 return Err(de::Error::duplicate_field("items"));
                             }

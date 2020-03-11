@@ -40,6 +40,21 @@ impl RegisterCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> RegisterCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+        let record_length = items[2].len();
+        let record_data = Buffer::from(items[2].read_bytes(record_length).unwrap());
+        let block_hash = items[3].read_hash().unwrap();
+
+        RegisterCovenant {
+            name_hash,
+            height,
+            record_data,
+            block_hash,
+        }
+    }
 }
 
 impl Encodable for RegisterCovenant {

@@ -26,6 +26,13 @@ impl RevokeCovenant {
 
         items
     }
+
+    pub fn from_items(mut items: Vec<Buffer>) -> RevokeCovenant {
+        let name_hash = items[0].read_hash().unwrap();
+        let height = items[1].read_u32().unwrap();
+
+        RevokeCovenant { name_hash, height }
+    }
 }
 
 impl Encodable for RevokeCovenant {
