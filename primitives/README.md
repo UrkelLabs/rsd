@@ -40,18 +40,18 @@ To run all unit tests, use the following command: `cargo test`.
           └── revoke.rs
           └── transfer.rs
           └── update.rs
-      └── transaction  #
+      └── transaction
           └── input.rs
           └── mod.rs
           └── outpoint.rs
           └── output.rs
           └── transaction.rs
-      └── address
-      └── block
-      └── claim
-      └── headers
-      └── inventoy 
-      └── lib
+      └── address.rs
+      └── block.rs
+      └── claim.rs
+      └── headers.rs
+      └── inventoy.rs
+      └── lib.rs
 ```
 
 ## Roadmap
