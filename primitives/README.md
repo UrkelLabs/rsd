@@ -3,6 +3,7 @@
 This modules houses all of the primitives that are used in Handshake. 
 
 ## Overview
+TODO
 
 ## Building
 
@@ -18,7 +19,6 @@ Currently the only tests we have for primitives are unit tests. These are define
 To run all unit tests, use the following command: `cargo test`.
 
 ## Organization
-
 ```
    primitives
       └── block_template
@@ -52,9 +52,7 @@ To run all unit tests, use the following command: `cargo test`.
       └── headers
       └── inventoy 
       └── lib
-          ```
-
-
+```
 
 ## Roadmap
 
