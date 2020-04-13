@@ -115,7 +115,7 @@ impl Compact {
 #[cfg(feature = "json")]
 impl serde::Serialize for Compact {
     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
-        s.serialize_str(&self.0.to_le_bytes().to_hex())
+        s.serialize_str(&self.0.to_be_bytes().to_hex())
     }
 }
 
