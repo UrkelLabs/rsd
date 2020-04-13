@@ -171,7 +171,7 @@ impl<'de> Deserialize<'de> for Compact {
                 if bytes.len() == 4 {
                     let mut bytes_array = [0; 4];
                     bytes_array.copy_from_slice(&bytes);
-                    let val = u32::from_le_bytes(bytes_array);
+                    let val = u32::from_be_bytes(bytes_array);
                     Ok(Compact(val))
                 } else {
                     Err(E::custom("Compact out of range"))
