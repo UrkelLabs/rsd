@@ -81,7 +81,7 @@ pub struct ClaimEntry {
     version: u8,
     hash: Buffer,
     //@todo check type here.
-    value: u32,
+    value: u64,
     //@todo check type here.
     fee: u32,
     weak: bool,
