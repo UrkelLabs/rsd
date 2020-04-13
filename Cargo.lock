@@ -734,6 +734,8 @@ dependencies = [
  "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "handshake-encoding",
  "pds",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

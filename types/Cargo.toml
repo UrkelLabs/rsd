@@ -13,6 +13,7 @@ default = []
 # This breaks some builds on CI, so I'm going to feature flag this for now, until we can get a murmur3 impl in Rust
 # and drop the requirement on fasthash in pds.
 bloom = ["pds"]
+json = ["serde"]
 
 [dependencies]
 # Internal
@@ -26,3 +27,7 @@ encodings = "0.1.0"
 # Unknown External
 chrono = "0.4"
 cryptoxide = "0.1.1"
+
+# Optional Feature Gated
+serde = { version="1.0", features=["derive"], optional = true}
+serde_json = { version="1.0", optional=true}

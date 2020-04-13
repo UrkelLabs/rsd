@@ -1,4 +1,10 @@
 use extended_primitives::Uint256;
+use std::fmt;
+
+#[cfg(feature = "json")]
+use encodings::{FromHex, ToHex};
+#[cfg(feature = "json")]
+use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Compact(u32);
@@ -101,6 +107,79 @@ impl Compact {
             shift -= 1;
         }
         diff
+    }
+}
+
+// ====== Feature: JSON ======
+
+#[cfg(feature = "json")]
+impl serde::Serialize for Compact {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        s.serialize_str(&self.0.to_le_bytes().to_hex())
+    }
+}
+
+#[cfg(feature = "json")]
+impl<'de> Deserialize<'de> for Compact {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct CompactVisitor;
+
+        impl CompactVisitor {
+            pub fn new() -> CompactVisitor {
+                CompactVisitor {}
+            }
+        }
+
+        impl<'de> Visitor<'de> for CompactVisitor {
+            type Value = Compact;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("compact")
+            }
+
+            fn visit_u32<E>(self, value: u32) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Compact(value))
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                // Ok(i32::from(value))
+                if value >= u64::from(u32::min_value()) && value <= u64::from(u32::max_value()) {
+                    Ok(Compact(value as u32))
+                } else {
+                    Err(E::custom(format!("u32 out of range: {}", value)))
+                }
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let bytes = match Vec::from_hex(value) {
+                    Ok(bytes) => bytes,
+                    Err(e) => return Err(E::custom(e)),
+                };
+
+                if bytes.len() == 4 {
+                    let mut bytes_array = [0; 4];
+                    bytes_array.copy_from_slice(&bytes);
+                    let val = u32::from_le_bytes(bytes_array);
+                    Ok(Compact(val))
+                } else {
+                    Err(E::custom("Compact out of range"))
+                }
+            }
+        }
+
+        deserializer.deserialize_any(CompactVisitor::new())
     }
 }
 
