@@ -9,9 +9,9 @@ TODO
 
 Building the primitives module is similar to other modules in that it can be built with just a `cargo build`.
 We also add some optional features in this library. Due to the amount of code bloat that is added with json encoding and decoding, we 
-have feature gated that behind the feature `serde`.
+have feature gated that behind the feature `json`.
 
-To build this module with that feature enabled, run the following command: `cargo build --features=serde`. This will enabled JSON encoding and decoding for all primitives.
+To build this module with that feature enabled, run the following command: `cargo build --features=json`. This will enabled JSON encoding and decoding for all primitives.
 
 ## Testing
 Currently the only tests we have for primitives are unit tests. These are defined within the files themselves.
