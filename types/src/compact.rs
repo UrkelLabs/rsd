@@ -47,6 +47,10 @@ impl Compact {
         Uint256::max_value().into()
     }
 
+    pub fn to_u32(&self) -> u32 {
+        self.0
+    }
+
     /// Computes the target [0, T] that a blockhash must land in to be valid
     /// Returns value in error, if there is an overflow or its negative value
     pub fn to_u256(&self) -> Result<Uint256, Uint256> {
