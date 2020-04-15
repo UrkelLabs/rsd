@@ -59,9 +59,9 @@ impl FinalizeCovenant {
         let name_length = items[2].len();
         let name = items[2].read_string(name_length).unwrap();
         let flags = items[3].read_u8().unwrap();
-        let claimed = items[3].read_u32().unwrap();
-        let renewals = items[4].read_u32().unwrap();
-        let block_hash = items[5].read_hash().unwrap();
+        let claimed = items[4].read_u32().unwrap();
+        let renewals = items[5].read_u32().unwrap();
+        let block_hash = items[6].read_hash().unwrap();
 
         FinalizeCovenant {
             name_hash,
