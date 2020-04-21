@@ -1,13 +1,17 @@
+#[cfg(feature = "json")]
+pub mod json;
+
+#[cfg(feature = "json")]
+use json::BlockTemplateJSON;
+
 pub mod airdrop;
 pub mod builder;
-pub mod json;
 use crate::{Address, Input, Output, Transaction};
 use airdrop::BlockAirdrop;
 use cryptoxide::blake2b::Blake2b;
 use cryptoxide::digest::Digest;
 use extended_primitives::{Buffer, Hash, Uint256};
 
-use json::BlockTemplateJSON;
 // use handshake_encoding::{Decodable, DecodingError, Encodable};
 use handshake_protocol::consensus::get_reward;
 // use handshake_script::Witness;

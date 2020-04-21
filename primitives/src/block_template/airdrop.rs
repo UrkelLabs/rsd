@@ -1,8 +1,10 @@
 use crate::address::Payload;
-use crate::block_template::json::AirdropEntry;
 use crate::{Address, Input, Output, Transaction};
 use encodings::FromHex;
 use extended_primitives::{Buffer, Hash, Uint256};
+
+#[cfg(feature = "json")]
+use crate::block_template::json::AirdropEntry;
 
 pub struct BlockAirdrop {
     pub blob: Buffer,
@@ -15,6 +17,7 @@ pub struct BlockAirdrop {
 }
 
 impl BlockAirdrop {
+    #[cfg(feature = "json")]
     pub fn from_entry(entry: AirdropEntry) -> Self {
         let payload = Payload::from_hash(Buffer::from_hex(entry.address).unwrap()).unwrap();
         BlockAirdrop {

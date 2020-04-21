@@ -1,4 +1,5 @@
 use crate::block_template::airdrop::BlockAirdrop;
+#[cfg(feature = "json")]
 use crate::block_template::json::BlockTemplateJSON;
 use crate::{Address, BlockTemplate, Input, Output, Transaction};
 use encodings::FromHex;
@@ -52,6 +53,7 @@ impl BlockTemplateBuilder {
         Default::default()
     }
 
+    #[cfg(feature = "json")]
     pub fn with_json(mut self, template: BlockTemplateJSON) -> Self {
         let mut bits_bytes = [0u8; 4];
         bits_bytes.copy_from_slice(&Vec::from_hex(template.bits).unwrap());
