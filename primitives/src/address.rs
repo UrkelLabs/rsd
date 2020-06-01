@@ -1,4 +1,4 @@
-use bech32::{u5, FromBase32};
+use bech32::{u5, FromBase32, ToBase32};
 use extended_primitives::Buffer;
 use handshake_encoding::{Decodable, DecodingError, Encodable};
 use std::fmt;
@@ -10,6 +10,9 @@ use encodings::ToHex;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 #[cfg(feature = "json")]
 use serde::ser::SerializeStruct;
+
+//@todo we need a toHS1 syntax function.
+//bech32
 
 #[derive(Debug)]
 pub enum AddressError {
@@ -107,6 +110,14 @@ impl Address {
 
     pub fn is_unspendable(&self) -> bool {
         self.is_null_data()
+    }
+
+    pub fn to_bech32(&self) -> String {
+        //@todo this should be network dependant. Need to put work into this.
+        //Right now this will only support mainnet addresses.
+        let mut data = vec![self.version];
+        data.extend_from_slice(&self.hash.to_hash());
+        bech32::encode("hs", data.to_base32()).unwrap()
     }
 }
 
