@@ -113,11 +113,15 @@ impl Address {
     }
 
     pub fn to_bech32(&self) -> String {
+        //Also todo this should probably just be in toString, and should use writers so that we
+        //don't allocate.
         //@todo this should be network dependant. Need to put work into this.
         //Right now this will only support mainnet addresses.
-        let mut data = vec![self.version];
-        data.extend_from_slice(&self.hash.clone().to_hash());
-        bech32::encode("hs", data.to_base32()).unwrap()
+        // let mut data = vec![self.version];
+        let mut data = vec![bech32::u5::try_from_u8(self.version).unwrap()];
+        data.extend_from_slice(&self.hash.clone().to_hash().to_base32());
+
+        bech32::encode("hs", data).unwrap()
     }
 }
 
@@ -315,5 +319,18 @@ impl<'de> Deserialize<'de> for Address {
 
         const FIELDS: &'static [&'static str] = &["version", "hash"];
         deserializer.deserialize_struct("Address", FIELDS, AddressVisitor)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_from_bech32() {
+        let addr = Address::from_str("hs1qd42hrldu5yqee58se4uj6xctm7nk28r70e84vx").unwrap();
+        dbg!(&addr);
+
+        dbg!(addr.to_bech32());
     }
 }
