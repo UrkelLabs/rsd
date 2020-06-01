@@ -650,7 +650,7 @@ name = "handshake-encoding"
 version = "0.1.2"
 dependencies = [
  "encodings",
- "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "extended-primitives 0.3.2 (git+https://github.com/UrkelLabs/extended-primitives.git)",
 ]
 
 [[package]]
@@ -731,7 +731,7 @@ dependencies = [
  "chrono",
  "cryptoxide",
  "encodings",
- "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "extended-primitives 0.3.2 (git+https://github.com/UrkelLabs/extended-primitives.git)",
  "handshake-encoding",
  "pds",
  "serde",
