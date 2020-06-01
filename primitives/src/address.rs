@@ -116,7 +116,7 @@ impl Address {
         //@todo this should be network dependant. Need to put work into this.
         //Right now this will only support mainnet addresses.
         let mut data = vec![self.version];
-        data.extend_from_slice(&self.hash.to_hash());
+        data.extend_from_slice(&self.hash.clone().to_hash());
         bech32::encode("hs", data.to_base32()).unwrap()
     }
 }
