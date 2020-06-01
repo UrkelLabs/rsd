@@ -1,6 +1,7 @@
 use encodings::hex::{FromHex, ToHex};
 use extended_primitives::{Buffer, VarInt};
 use handshake_encoding::{Decodable, DecodingError, Encodable};
+use handshake_types::{Name, NameHash};
 use std::fmt;
 
 use super::{
@@ -54,6 +55,35 @@ impl Covenant {
         match self {
             Covenant::None => false,
             _ => true,
+        }
+    }
+
+    //This only returns a name if the covenant contains it. Most of the covs only have name hashes
+    //so this will return a none for those types.
+    pub fn get_name(&self) -> Option<Name> {
+        match self {
+            Covenant::Claim(cov) => Some(cov.name.clone()),
+            Covenant::Bid(cov) => Some(cov.name.clone()),
+            Covenant::Open(cov) => Some(cov.name.clone()),
+            Covenant::Finalize(cov) => Some(cov.name.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn get_name_hash(&self) -> Option<NameHash> {
+        match self {
+            Covenant::Claim(cov) => Some(cov.name_hash),
+            Covenant::Bid(cov) => Some(cov.name_hash),
+            Covenant::Open(cov) => Some(cov.name_hash),
+            Covenant::Reveal(cov) => Some(cov.name_hash),
+            Covenant::Redeem(cov) => Some(cov.name_hash),
+            Covenant::Register(cov) => Some(cov.name_hash),
+            Covenant::Update(cov) => Some(cov.name_hash),
+            Covenant::Renew(cov) => Some(cov.name_hash),
+            Covenant::Transfer(cov) => Some(cov.name_hash),
+            Covenant::Finalize(cov) => Some(cov.name_hash),
+            Covenant::Revoke(cov) => Some(cov.name_hash),
+            _ => None,
         }
     }
 
