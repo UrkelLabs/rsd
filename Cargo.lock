@@ -328,6 +328,7 @@ version = "0.3.2"
 source = "git+https://github.com/UrkelLabs/extended-primitives.git#8e6d69a66998979a15ea6c8b8392e2b95e76c318"
 dependencies = [
  "encodings",
+ "serde",
 ]
 
 [[package]]
@@ -337,7 +338,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c9fce46b76444eb0c5ccf13cf1cf176ab5b841fc0d4dc593dc9554659358492"
 dependencies = [
  "encodings",
- "serde",
 ]
 
 [[package]]
@@ -689,7 +689,7 @@ dependencies = [
  "bech32",
  "cryptoxide",
  "encodings",
- "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "extended-primitives 0.3.2 (git+https://github.com/UrkelLabs/extended-primitives.git)",
  "handshake-encoding",
  "handshake-protocol",
  "handshake-script",
@@ -705,7 +705,7 @@ dependencies = [
 name = "handshake-protocol"
 version = "0.1.0"
 dependencies = [
- "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "extended-primitives 0.3.2 (git+https://github.com/UrkelLabs/extended-primitives.git)",
  "handshake-types",
 ]
 
@@ -713,7 +713,7 @@ dependencies = [
 name = "handshake-script"
 version = "0.1.0"
 dependencies = [
- "extended-primitives 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "extended-primitives 0.3.2 (git+https://github.com/UrkelLabs/extended-primitives.git)",
  "handshake-encoding",
 ]
 
