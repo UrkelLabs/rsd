@@ -260,7 +260,7 @@ impl Amount {
     /// Equivalent to `to_float_in(Denomination::Bitcoin)`.
     ///
     /// Please be aware of the risk of using floating-point numbers.
-    pub fn as_btc(&self) -> f64 {
+    pub fn as_hns(&self) -> f64 {
         self.to_float_in(Denomination::Handshake)
     }
 
