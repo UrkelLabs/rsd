@@ -402,7 +402,7 @@ impl Amount {
 #[cfg(feature = "json")]
 impl serde::Serialize for Amount {
     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
-        s.serialize_u64(&self.0)
+        s.serialize_u64(self.0)
     }
 }
 
@@ -428,9 +428,9 @@ impl<'de> Deserialize<'de> for Amount {
     {
         struct AmountVisitor;
 
-        impl CompactVisitor {
-            pub fn new() -> CompactVisitor {
-                CompactVisitor {}
+        impl AmountVisitor {
+            pub fn new() -> AmountVisitor {
+                AmountVisitor {}
             }
         }
 
