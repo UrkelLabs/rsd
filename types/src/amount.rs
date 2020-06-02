@@ -64,6 +64,7 @@ impl FromStr for Denomination {
 /// An error during [Amount] parsing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseAmountError {
+    Negative,
     /// Amount is too big to fit in an [Amount].
     TooBig,
     /// Amount has higher precision than supported by [Amount].
@@ -96,6 +97,7 @@ impl error::Error for ParseAmountError {
 
     fn description(&self) -> &'static str {
         match *self {
+            ParseAmountError::Negative => "amount is negative",
             ParseAmountError::TooBig => "amount is too big",
             ParseAmountError::TooPrecise => "amount has a too high precision",
             ParseAmountError::InvalidFormat => "invalid number format",
@@ -151,39 +153,40 @@ impl Amount {
     /// Note: This only parses the value string.  If you want to parse a value
     /// with denomination, use [FromStr].
     pub fn from_str_in(mut s: &str, denom: Denomination) -> Result<Amount, ParseAmountError> {
-        if s.len() == 0 {
+        if s.is_empty() {
             return Err(ParseAmountError::InvalidFormat);
         }
         if s.len() > 50 {
             return Err(ParseAmountError::InputTooLarge);
         }
 
-        // let negative = s.chars().next().unwrap() == '-';
-        // if negative {
-        //     if s.len() == 1 {
-        //         return Err(ParseAmountError::InvalidFormat);
-        //     }
-        //     s = &s[1..];
-        // }
+        let is_negative = s.starts_with('-');
+        if is_negative {
+            if s.len() == 1 {
+                return Err(ParseAmountError::InvalidFormat);
+            }
+            s = &s[1..];
+        }
 
         let max_decimals = {
             // The difference in precision between native (satoshi)
             // and desired denomination.
-            let precision_diff = denom.precision();
-            if precision_diff > 0 {
-                // If precision diff is negative, this means we are parsing
-                // into a less precise amount. That is not allowed unless
-                // there are no decimals and the last digits are zeroes as
-                // many as the diffence in precision.
-                let last_n = precision_diff as usize;
-                if s.contains(".") || s.chars().rev().take(last_n).any(|d| d != '0') {
-                    return Err(ParseAmountError::TooPrecise);
-                }
-                s = &s[0..s.len() - last_n];
-                0
-            } else {
-                precision_diff
-            }
+            // @todo rigt now we don't support different denominations besides HNS and Doos
+            denom.precision()
+            // if precision_diff < 0 {
+            //     // If precision diff is negative, this means we are parsing
+            //     // into a less precise amount. That is not allowed unless
+            //     // there are no decimals and the last digits are zeroes as
+            //     // many as the diffence in precision.
+            //     let last_n = precision_diff as usize;
+            //     if s.contains(".") || s.chars().rev().take(last_n).any(|d| d != '0') {
+            //         return Err(ParseAmountError::TooPrecise);
+            //     }
+            //     s = &s[0..s.len() - last_n];
+            //     0
+            // } else {
+            //     precision_diff
+            // }
         };
 
         let mut decimals = None;
@@ -267,6 +270,10 @@ impl Amount {
     ///
     /// Please be aware of the risk of using floating-point numbers.
     pub fn from_float_in(value: f64, denom: Denomination) -> Result<Amount, ParseAmountError> {
+        if value < 0.0 {
+            return Err(ParseAmountError::Negative);
+        }
+
         // This is inefficient, but the safest way to deal with this. The parsing logic is safe.
         // Any performance-critical application should not be dealing with floats.
         Amount::from_str_in(&value.to_string(), denom)
