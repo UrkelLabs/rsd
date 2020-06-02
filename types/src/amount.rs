@@ -18,6 +18,9 @@ use std::fmt;
 use std::fmt::Write;
 use std::str::FromStr;
 
+#[cfg(feature = "json")]
+use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+
 /// A set of denominations in which an Amount can be expressed.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Denomination {
@@ -394,6 +397,15 @@ impl Amount {
     // }
 }
 
+// ====== Feature: JSON ======
+
+#[cfg(feature = "json")]
+impl serde::Serialize for Amount {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        s.serialize_u64(&self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     // Import everything used above
@@ -405,6 +417,56 @@ mod tests {
         assert_eq!(denom, Denomination::Handshake);
         let denom = Denomination::from_str("dollarydoo").unwrap();
         assert_eq!(denom, Denomination::DollaryDoo);
+    }
+}
+
+#[cfg(feature = "json")]
+impl<'de> Deserialize<'de> for Amount {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct AmountVisitor;
+
+        impl CompactVisitor {
+            pub fn new() -> CompactVisitor {
+                CompactVisitor {}
+            }
+        }
+
+        impl<'de> Visitor<'de> for AmountVisitor {
+            type Value = Amount;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("amount")
+            }
+
+            fn visit_u32<E>(self, value: u32) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Amount(value as u64))
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Amount(value))
+            }
+
+            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                match Amount::from_hns(value) {
+                    Ok(amount) => Ok(amount),
+                    Err(e) => Err(E::custom(e)),
+                }
+            }
+        }
+
+        deserializer.deserialize_any(AmountVisitor::new())
     }
 }
 
