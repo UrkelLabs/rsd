@@ -407,11 +407,98 @@ impl Amount {
 // ====== Feature: JSON ======
 
 #[cfg(feature = "json")]
-impl serde::Serialize for Amount {
-    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
-        s.serialize_u64(self.0)
+pub mod as_hns {
+    //! Serialize and deserialize [Amount] as JSON numbers denominated in HNS.
+    //! Use with `#[serde(with = "amount::as_hns")]`.
+
+    use super::*;
+    use serde::ser::Serialize;
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(a: &Amount, s: S) -> Result<S::Ok, S::Error> {
+        f64::serialize(&a.to_float_in(Denomination::Handshake), s)
+    }
+
+    pub fn deserialize<'d, D: Deserializer<'d>>(d: D) -> Result<Amount, D::Error> {
+        use serde::de::Error;
+        Ok(Amount::from_hns(f64::deserialize(d)?).map_err(D::Error::custom)?)
     }
 }
+
+#[cfg(feature = "json")]
+pub mod as_doos {
+    //! Serialize and deserialize [Amount] as real numbers denominated in dollarydoo.
+    //! Use with `#[serde(with = "amount::serde::as_doos")]`.
+
+    use super::*;
+    use serde::ser::Serialize;
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(a: &Amount, s: S) -> Result<S::Ok, S::Error> {
+        u64::serialize(&a.as_doos(), s)
+    }
+
+    pub fn deserialize<'d, D: Deserializer<'d>>(d: D) -> Result<Amount, D::Error> {
+        Ok(Amount::from_doos(u64::deserialize(d)?))
+    }
+}
+
+// #[cfg(feature = "json")]
+// impl serde::Serialize for Amount {
+//     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+//         s.serialize_u64(self.0)
+//     }
+// }
+
+// #[cfg(feature = "json")]
+// impl<'de> Deserialize<'de> for Amount {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         struct AmountVisitor;
+
+//         impl AmountVisitor {
+//             pub fn new() -> AmountVisitor {
+//                 AmountVisitor {}
+//             }
+//         }
+
+//         impl<'de> Visitor<'de> for AmountVisitor {
+//             type Value = Amount;
+
+//             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+//                 formatter.write_str("amount")
+//             }
+
+//             fn visit_u32<E>(self, value: u32) -> Result<Self::Value, E>
+//             where
+//                 E: de::Error,
+//             {
+//                 Ok(Amount(value as u64))
+//             }
+
+//             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+//             where
+//                 E: de::Error,
+//             {
+//                 Ok(Amount(value))
+//             }
+
+//             fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+//             where
+//                 E: de::Error,
+//             {
+//                 match Amount::from_hns(value) {
+//                     Ok(amount) => Ok(amount),
+//                     Err(e) => Err(E::custom(e)),
+//                 }
+//             }
+//         }
+
+//         deserializer.deserialize_any(AmountVisitor::new())
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -426,63 +513,3 @@ mod tests {
         assert_eq!(denom, Denomination::DollaryDoo);
     }
 }
-
-#[cfg(feature = "json")]
-impl<'de> Deserialize<'de> for Amount {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct AmountVisitor;
-
-        impl AmountVisitor {
-            pub fn new() -> AmountVisitor {
-                AmountVisitor {}
-            }
-        }
-
-        impl<'de> Visitor<'de> for AmountVisitor {
-            type Value = Amount;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("amount")
-            }
-
-            fn visit_u32<E>(self, value: u32) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(Amount(value as u64))
-            }
-
-            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(Amount(value))
-            }
-
-            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                match Amount::from_hns(value) {
-                    Ok(amount) => Ok(amount),
-                    Err(e) => Err(E::custom(e)),
-                }
-            }
-        }
-
-        deserializer.deserialize_any(AmountVisitor::new())
-    }
-}
-
-// impl Denomination {
-//     /// The number of decimal places more than a dollarydoo.
-//     fn precision(self) -> u32 {
-//         match self {
-//             Denomination::DollaryDoo => 0,
-//             Denomination::Handshake => 6,
-//         }
-//     }
-// }
