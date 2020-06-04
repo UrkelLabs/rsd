@@ -252,7 +252,7 @@ impl Amount {
     ///
     /// Please be aware of the risk of using floating-point numbers.
     pub fn to_float_in(&self, denom: Denomination) -> f64 {
-        (self.as_doos() as f64) * 10_f64.powi(denom.precision() as i32)
+        (self.as_doos() as f64) / 10_f64.powi(denom.precision() as i32)
     }
 
     /// Express this [Amount] as a floating-point value in Bitcoin.
