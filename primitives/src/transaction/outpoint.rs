@@ -6,7 +6,7 @@ use std::fmt;
 
 //@todo should we impl Odr?
 //@todo Eq and PartialEq probably need to be rewritten for BIP69
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Outpoint {
     txid: Hash,
     index: u32,
