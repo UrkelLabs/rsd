@@ -8,8 +8,8 @@ use std::fmt;
 //@todo Eq and PartialEq probably need to be rewritten for BIP69
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Outpoint {
-    txid: Hash,
-    index: u32,
+    pub txid: Hash,
+    pub index: u32,
 }
 
 impl Outpoint {
