@@ -127,8 +127,8 @@ impl Covenant {
         match self {
             Covenant::None => 0,
             Covenant::Claim(_) => 1,
-            Covenant::Bid(_) => 2,
-            Covenant::Open(_) => 3,
+            Covenant::Open(_) => 2,
+            Covenant::Bid(_) => 3,
             Covenant::Reveal(_) => 4,
             Covenant::Redeem(_) => 5,
             Covenant::Register(_) => 6,
