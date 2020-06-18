@@ -230,6 +230,7 @@ impl<'de> Deserialize<'de> for Address {
         enum Field {
             Version,
             Hash,
+            Str,
         };
 
         impl<'de> Deserialize<'de> for Field {
@@ -253,6 +254,7 @@ impl<'de> Deserialize<'de> for Address {
                         match value {
                             "version" => Ok(Field::Version),
                             "hash" => Ok(Field::Hash),
+                            "string" => Ok(Field::Str),
                             _ => Err(de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -275,12 +277,15 @@ impl<'de> Deserialize<'de> for Address {
             where
                 V: SeqAccess<'de>,
             {
+                //Skip string
+                seq.next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
                 let version = seq
                     .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
                 let hash_raw: Buffer = seq
                     .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+                    .ok_or_else(|| de::Error::invalid_length(2, &self))?;
 
                 let hash = Payload::from_hash(hash_raw).map_err(de::Error::custom)?;
 
@@ -307,6 +312,7 @@ impl<'de> Deserialize<'de> for Address {
                             }
                             hash = Some(map.next_value()?);
                         }
+                        Field::Str => {}
                     }
                 }
                 let version = version.ok_or_else(|| de::Error::missing_field("version"))?;
