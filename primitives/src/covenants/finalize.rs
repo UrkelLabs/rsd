@@ -66,7 +66,7 @@ impl FinalizeCovenant {
         FinalizeCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
             flags,
             claimed,
             renewals,
@@ -176,7 +176,7 @@ impl Decodable for FinalizeCovenant {
         Ok(FinalizeCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
             flags,
             claimed,
             renewals,

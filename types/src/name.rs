@@ -5,6 +5,7 @@ static MAX_NAME_SIZE: usize = 63;
 
 static BLACKLIST: &[&str] = &["example", "invalid", "local", "localhost", "test"];
 
+#[derive(Debug)]
 pub enum NameError {
     InvalidName,
 }

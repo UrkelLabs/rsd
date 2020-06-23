@@ -60,7 +60,7 @@ impl ClaimCovenant {
         ClaimCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
             flags,
             commit_hash,
             commit_height,
@@ -158,7 +158,7 @@ impl Decodable for ClaimCovenant {
         Ok(ClaimCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
             flags,
             commit_hash,
             commit_height,

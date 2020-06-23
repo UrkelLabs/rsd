@@ -50,7 +50,9 @@ impl BidCovenant {
         BidCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            //@todo ideally we wouldn't have to unwrap here, but we almost know for certain that
+            //this will work. There may be a better way to handle to this perhaops assert
+            name: name.parse().unwrap(),
             hash,
         }
     }
@@ -127,7 +129,7 @@ impl Decodable for BidCovenant {
         Ok(BidCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
             hash,
         })
     }

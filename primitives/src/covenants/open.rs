@@ -45,7 +45,7 @@ impl OpenCovenant {
         OpenCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
         }
     }
 }
@@ -110,7 +110,7 @@ impl Decodable for OpenCovenant {
         Ok(OpenCovenant {
             name_hash,
             height,
-            name: Name::from(name),
+            name: name.parse().unwrap(),
         })
     }
 }
