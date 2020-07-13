@@ -292,11 +292,11 @@ impl<'de> Deserialize<'de> for Address {
                 Ok(Address::new(version, hash))
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<T, E>
+            fn visit_str<E>(self, value: &str) -> Result<Address, V::Error>
             where
                 E: de::Error,
             {
-                Ok(Address::from_str(value).unwrap())
+                Ok(Address::from_str(value).map_err(de::Error::custom)?)
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<Address, V::Error>
