@@ -292,7 +292,7 @@ impl<'de> Deserialize<'de> for Address {
                 Ok(Address::new(version, hash))
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<Address, V::Error>
+            fn visit_str<E>(self, value: &str) -> Result<Address, E>
             where
                 E: de::Error,
             {
