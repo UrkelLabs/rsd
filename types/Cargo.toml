@@ -20,8 +20,7 @@ json = ["serde"]
 handshake-encoding = { version="^0.1.1", path="../encoding"}
 
 # Known External - I'm going to move these off versioning for now until we need to publish a new version.
-# extended-primitives = "^0.3.1"
-extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git"}
+extended-primitives = "0.3.4"
 pds = { version="0.2.0", optional = true }
 encodings = "0.1.0"
 

@@ -12,7 +12,7 @@ handshake-protocol = { path="../protocol" }
 handshake-primitives = {path="../primitives" }
 
 # Known External
-extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git" }
+extended-primitives = "0.3.4"
 brontide = { git="https://github.com/UrkelLabs/brontide", features = ["stream"] }
 
 # Unknown External

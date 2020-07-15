@@ -9,7 +9,6 @@ description = "Encoding Library for Handshake"
 [dependencies]
 
 # Known External - See types Cargo.lock for explanation
-# extended-primitives = "^0.3.1"
-extended-primitives = { git="https://github.com/UrkelLabs/extended-primitives.git"}
+extended-primitives = "0.3.4"
 encodings = "0.1.0"
 
