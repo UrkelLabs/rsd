@@ -12,7 +12,6 @@ use handshake_types::NameHash;
 pub struct TransferCovenant {
     pub name_hash: NameHash,
     pub height: u32,
-    pub version: u8,
     pub address: Address,
 }
 
@@ -29,11 +28,11 @@ impl TransferCovenant {
         items.push(buffer);
 
         let mut buffer = Buffer::new();
-        buffer.write_u8(self.version);
+        buffer.write_u8(self.address.version);
         items.push(buffer);
 
         let mut buffer = Buffer::new();
-        buffer.extend(self.address.hash.clone().to_hash().clone());
+        buffer.extend(self.address.hash.clone().to_hash());
         items.push(buffer);
 
         items
@@ -47,16 +46,14 @@ impl TransferCovenant {
         let hash_len = items[3].len();
         let hash = Buffer::from(items[3].read_bytes(hash_len).unwrap());
 
-        //@todo not sure if I'm a fan of this. Maybe just keep it as a addr_hash in the struct.
         let address = Address {
-            version: 0,
+            version,
             hash: Payload::from_hash(hash).unwrap(),
         };
 
         TransferCovenant {
             name_hash,
             height,
-            version,
             address,
         }
     }
@@ -100,7 +97,7 @@ impl Encodable for TransferCovenant {
 
         //Version
         buffer.write_varint(1);
-        buffer.write_u8(self.version);
+        buffer.write_u8(self.address.version);
 
         //Block Hash
         buffer.write_var_bytes(self.address.hash.as_hash());
@@ -125,18 +122,17 @@ impl Decodable for TransferCovenant {
         buffer.read_varint()?;
         let version = buffer.read_u8()?;
 
-        buffer.read_varint()?;
         let hash = Buffer::from(buffer.read_var_bytes()?);
+
         //@todo not sure if I'm a fan of this. Maybe just keep it as a addr_hash in the struct.
         let address = Address {
-            version: 0,
+            version,
             hash: Payload::from_hash(hash).unwrap(),
         };
 
         Ok(TransferCovenant {
             name_hash,
             height,
-            version,
             address,
         })
     }
