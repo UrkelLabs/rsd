@@ -425,9 +425,9 @@ impl<'de> Deserialize<'de> for Covenant {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Address;
     use extended_primitives::Hash;
     use handshake_types::{Name, NameHash};
+    use std::str::FromStr;
 
     #[test]
     fn test_covenant_encoding() {
@@ -443,7 +443,7 @@ mod tests {
             )
             .unwrap(),
             height: 100,
-            name: Name::from("satoshi".to_owned()),
+            name: Name::from_str("satoshi").unwrap(),
             flags: 0,
             commit_hash: Hash::from_hex(
                 "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
@@ -460,7 +460,7 @@ mod tests {
             )
             .unwrap(),
             height: 0,
-            name: Name::from("satoshi".to_owned()),
+            name: Name::from_str("satoshi").unwrap(),
         });
 
         assert_eq!(open_cov.to_hex(), "0203207f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda90070400000000077361746f736869");
@@ -472,7 +472,7 @@ mod tests {
             )
             .unwrap(),
             height: 100,
-            name: Name::from("satoshi".to_owned()),
+            name: Name::from_str("satoshi").unwrap(),
             //@todo automatically generate this blind.
             hash: Hash::from_hex(
                 "7f092b58e32d1875652f36bdf2f5242ef2048dd8e5ff27988437c1c7aeda9007",
@@ -564,7 +564,7 @@ mod tests {
             )
             .unwrap(),
             height: 100,
-            version: 0,
+            //version: 0,
             address: "hs1qd42hrldu5yqee58se4uj6xctm7nk28r70e84vx"
                 .parse()
                 .unwrap(),
@@ -581,7 +581,7 @@ mod tests {
             )
             .unwrap(),
             height: 100,
-            name: Name::from("satoshi".to_owned()),
+            name: Name::from_str("satoshi").unwrap(),
             flags: 0,
             claimed: 200,
             renewals: 300,
