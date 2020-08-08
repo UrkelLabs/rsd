@@ -20,7 +20,6 @@ pub struct Transaction {
 impl Transaction {
     pub fn new(locktime: u32, inputs: Vec<Input>, outputs: Vec<Output>) -> Self {
         Transaction {
-            //@todo not sure what exactly what we should be doing here.
             version: 0,
             locktime,
             inputs,
@@ -178,45 +177,26 @@ mod test {
     use super::*;
     use handshake_types::Amount;
 
-    // #[test]
-    // fn test_tx_hashing() {
-    //     // let mut input = Input::new_coinbase("");
-    //     // let mut outputs = Vec::new();
-    //     // input.sequence = 0;
-    //     // let mut inputs = Vec::new();
-    //     // inputs.push(input);
-    //     // let output = Output::new(
-    //     //     Amount::from_doos(2_000_000_000),
-    //     //     "ss1qm7zqc7h820qrxd3f72v9jhvmvgzf69cenz8hkn"
-    //     //         .parse()
-    //     //         .unwrap(),
-    //     // );
-
-    //     // outputs.push(output);
-    //     // // let tx: Transaction = Default::default();
-    //     // let tx = Transaction::new(391, inputs, outputs);
-    //     // let raw = tx.encode();
-    //     // dbg!(hex::encode(&raw));
-    //     // dbg!(tx.get_base_size());
-    //     // let base = tx.get_base_size();
-    //     // let witness = raw.len() - base;
-    //     // dbg!(witness);
-    //     // dbg!(hex::encode(&raw[..base]));
-    //     // dbg!(&tx);
-    //     // dbg!(hex::encode(tx.hash()));
-    //     // dbg!(hex::encode(tx.witness_hash()));
-    // }
-
     #[test]
     fn test_tx_decode() {
-        // let tx = Transaction::from_hex("0000000002beac67aa84cb3f0354cb018918cfbcfd1b1fb9a693676fa9a4d012a8f673075200000000ffffffff387d93945b2f49295efa3a5e9db435914f03611322dbca0e7eb2f7dee21f2cd400000000ffffffff0278e00100000000000014d320b66463172d77d19aa8296024d264d0957f7507032048e55ada7bca0c8500b78cc53fdf6604d3de4499eb5467dec8d83b2525ad4e83047d000000090000a8000134476508e8a13577000000000014375ebf44978effb90126c1772ac8a160a000f90c0000000000000241d26c53d7a64b45a06e933a3b50d4845b7c6244dc0029634a5465fc45597d12473b5c88b9afcd4d9c7ffc438de582f6404e96e57cde44812378674a21435a2d170121028ea8b984f6be5169edc9e120301883d2bc3d4c8cb8f216fffe88be146c2a3915024148958296317d3e26043e6a190cb46a0f71c4ab0a6a18d357e554c0f2ee91581a1a5362c4527274c7ab15bb5d87f2ff4f4f4e3e37a5010e9a331dc54f386d51050121026321536c96f094474b46f0b27ed1b7403e68a7d3ea83553dd67f85c72394bc68").unwrap();
+        let hex = "0000000001559bbf1393486a748bcf06a7c24c8e6ccc6ff4ae595a8b378597b3db6abfef2b00000000ffffffff02000000000000000000144d60300b0d522c835b6568287042b417b40e8343020320cbeeeb6a07c1e8f1fbfbee0ea496b19c0287e8192b4563521dc844bbc7ea1e29040000000003656e64789435770000000000148eba4845a159f30afe580c685d89f69051db26290000000000000241b2e22bff6a35660b429dd952c1b5e3a9209406c8d12ba670c95f87238f2ce5777042e2af5a7f6db3abafb70795ceddc88a1d0a76c60958319174b98328e371ab0121026321536c96f094474b46f0b27ed1b7403e68a7d3ea83553dd67f85c72394bc68";
+        let tx = Transaction::from_hex(hex).unwrap();
+        let encoded = tx.to_hex();
 
-        let tx_2 = Transaction::from_hex("0000000001559bbf1393486a748bcf06a7c24c8e6ccc6ff4ae595a8b378597b3db6abfef2b00000000ffffffff02000000000000000000144d60300b0d522c835b6568287042b417b40e8343020320cbeeeb6a07c1e8f1fbfbee0ea496b19c0287e8192b4563521dc844bbc7ea1e29040000000003656e64789435770000000000148eba4845a159f30afe580c685d89f69051db26290000000000000241b2e22bff6a35660b429dd952c1b5e3a9209406c8d12ba670c95f87238f2ce5777042e2af5a7f6db3abafb70795ceddc88a1d0a76c60958319174b98328e371ab0121026321536c96f094474b46f0b27ed1b7403e68a7d3ea83553dd67f85c72394bc68");
+        assert_eq!(hex, encoded);
+    }
 
-        dbg!(tx_2);
+    #[test]
+    fn test_tx_hash() {
+        let hex = "000000000189b8fefcbc040b03b3de29e1d7836716379e0282dfcd8d8be693431e15ba1bc301000000ffffffff0200000000000000000014f6448adf6a19ef63cbf7a00404b6b3c4bad059960203208323ce31d4f62e2c2a89e1aaffd4ed31cef82b3a462bfd4a9007b1a78b9ae49b04000000000b63616e6e61627574746572e7203193000000000014fce9ecbb20189c047d4c7d57339202066e0123b30000000000000241c5bc2bae9ff6c64c0c128fd76a79522be531a84bb96cc81c2eacb5d8591752b15821bf062e706c19c9d3be8b39eb088ec7a530fc5ae88985074ac1f5ba0c1c7d0121023a78c14e78410e7082bd82aa73d219964ff5d047b18ba80e9912bcfe3e9007f5";
+        let tx = Transaction::from_hex(hex).unwrap();
 
-        // let tx = Transaction::decode(&mut Buffer::from_hex("0000000001559bbf1393486a748bcf06a7c24c8e6ccc6ff4ae595a8b378597b3db6abfef2b00000000ffffffff02000000000000000000144d60300b0d522c835b6568287042b417b40e8343020320cbeeeb6a07c1e8f1fbfbee0ea496b19c0287e8192b4563521dc844bbc7ea1e29040000000003656e64789435770000000000148eba4845a159f30afe580c685d89f69051db26290000000000000241b2e22bff6a35660b429dd952c1b5e3a9209406c8d12ba670c95f87238f2ce5777042e2af5a7f6db3abafb70795ceddc88a1d0a76c60958319174b98328e371ab0121026321536c96f094474b46f0b27ed1b7403e68a7d3ea83553dd67f85c72394bc68").unwrap()).unwrap();
+        let hash = tx.hash();
+        let expected = Hash::from_hex("baac577630d12c95c49cdf99e53e4e0c5b24f54501bbbc7524c76bb0ae52dac5").unwrap();
+        assert_eq!(hash, expected);
 
-        // let tx = Transaction::decode(&mut Buffer::from_hex("00000000019d732c07a1eccb59e47fda89443d22a6945c9b2f30bd780e10f9fafcc8ab08b200000000ffffffff0200000000000000000014cdf2b6bf02b3b92b37a9bcdea79ee78012f712e80203209a832b1fda4272e8dd5fb8a0248422374551f04baff41c7ab1800abb802764bb04000000000762656c69657665bc9635770000000000148430316e0a59bca8865d508488eecceb9db0dde10000000000000241b0623e757113afa91ba39db44f7503cd71d75a84164a236bfd9c211f23591b224910d8b39ef27a4b5fee16b129a4600947bdd78c2fbb4b53bc524efafd5312380121036145638ba0a602a69147c47e4096df3c6a453847b851b79fc65ec240744494d4").unwrap()).unwrap();
+        let expected_witness_hash = Hash::from_hex("4426bd7f4ddc952acbee69c533fd988e67e499b94398924a8c46fe7ea59961b9").unwrap();
+        let witness_hash = tx.witness_hash();
+        assert_eq!(witness_hash, expected_witness_hash);
     }
 }
