@@ -28,6 +28,11 @@ impl Witness {
     pub fn set_data(&mut self, index: usize, data: Buffer) {
         self.stack.set(index, data);
     }
+
+    pub fn var_size(&self) -> usize {
+        let varint = VarInt::from(self.stack.len());
+        varint.encoded_size() as usize + self.size()
+    }
 }
 
 impl Encodable for Witness {
