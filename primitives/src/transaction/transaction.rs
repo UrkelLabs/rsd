@@ -85,6 +85,16 @@ impl Transaction {
         size += 4;
         size
     }
+
+    pub fn get_witness_size(&self) -> usize {
+        let mut size = 0;
+
+        for input in &self.inputs {
+            size += input.witness.var_size();
+        }
+
+        size
+    }
 }
 
 //@todo - thought. This could be automatically derived from Decoding/Encoding. Let's test this out
@@ -198,5 +208,17 @@ mod test {
         let expected_witness_hash = Hash::from_hex("4426bd7f4ddc952acbee69c533fd988e67e499b94398924a8c46fe7ea59961b9").unwrap();
         let witness_hash = tx.witness_hash();
         assert_eq!(witness_hash, expected_witness_hash);
+    }
+
+    #[test]
+    fn test_tx_size() {
+        let hex = "00000000017aa330f0a00a86b04df4569ef4dfeea0f5462fa3907378ce68b45a1e9ed6f97801000000ffffffff020000000000000000001430d02d1527cd490744111efe18524ebb531224810203205e5bd7f3e454fb4a4c80644ed1dbd66ec3d9ba6e7845704617dd8d325d2aaa890400000000066f63756c61723078fa34000000000014a1ddaf498c30cbae43c031bbfa7871fcde94966b00000000000002413a1d533b29d4f2618f61fffbdfc0b22a489838d0b743346a93b65445e15f93bf653cccd2e89d10a2792e10c0f983ebff04df4d810ec09246cdfdd7383e8bee420121024d80b165d51c32aa30076878279dfb87f4a149fc3fe3fd3d49ec757a621304bf";
+        let tx = Transaction::from_hex(hex).unwrap();
+
+        let base_size = tx.get_base_size();
+        let witness_size = tx.get_witness_size();
+
+        assert_eq!(base_size, 159);
+        assert_eq!(witness_size, 101);
     }
 }
