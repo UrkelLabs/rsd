@@ -45,16 +45,16 @@ impl BlockHeader {
     }
 
     ///Retrieve deterministically random padding.
-    //@todo I don't actually this is correct. Let's come back to it later.
-    pub fn padding(&self, size: usize) -> Vec<u8> {
-        let mut padding = Vec::new();
+    pub fn padding(&self, size: usize) -> Buffer {
+        let mut padding = Vec::with_capacity(size);
+        let prev_block = self.prev_block.to_array();
+        let tree_root = self.tree_root.to_array();
+
         for i in 0..size {
-            let padding_byte =
-                self.prev_block.to_array()[i % 32] ^ self.tree_root.to_array()[i % 32];
-            padding.push(padding_byte);
+            padding.push(prev_block[i % 32] ^ tree_root[i % 32]);
         }
 
-        padding.to_vec()
+        Buffer::from(padding)
     }
 
     /// The subheader contains miner-mutable and less essential data (that is,
@@ -257,154 +257,130 @@ impl FromHex for BlockHeader {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn test_block_header_hex_default() {
-    //     let block_header = BlockHeader::default();
+    #[test]
+    fn test_block_header_hex_default() {
+        let block_header = BlockHeader::default();
 
-    //     // let hex = block_header.as_hex();
-
-    //     assert_eq!(hex, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-    // }
-
-    // #[test]
-    // fn test_block_header_hex() {
-    //     let block_header = BlockHeader {
-    //         version: 1,
-    //         prev_blockhash: Default::default(),
-    //         merkle_root: Default::default(),
-    //         witness_root: Default::default(),
-    //         tree_root: Default::default(),
-    //         filter_root: Default::default(),
-    //         reserved_root: Default::default(),
-    //         time: 2,
-    //         bits: 3,
-    //         nonce: Default::default(),
-    //     };
-
-    //     // let hex = block_header.as_hex();
-
-    //     assert_eq!(hex, "010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000030000000000000000000000000000000000000000000000000000000000000000000000")
-    // }
+         let hex = block_header.to_hex();
+         // 212 bytes, multiply by 2 since building a String from 0s
+         let expect = String::from_utf8(vec![b'0'; 212 * 2]).unwrap();
+         assert_eq!(hex, expect)
+    }
 
     #[test]
-    fn test_check_header_pow() {
-        //We will need to pass a legit block for this test TODO
+    fn test_block_header_hex() {
         let block_header = BlockHeader {
-            version: 1,
+            version: 0,
+            prev_block: Default::default(),
+            merkle_root: Default::default(),
+            witness_root: Default::default(),
+            tree_root: Default::default(),
+            reserved_root: Default::default(),
+            time: 0,
+            bits: 0,
+            extra_nonce: Default::default(),
+            nonce: 1,
+            mask: Default::default()
+        };
+
+        let hex = block_header.to_hex();
+        let expect = format!("{}{}", "01", String::from_utf8(vec![b'0'; 211 * 2]).unwrap());
+        assert_eq!(hex, expect);
+    }
+
+    #[test]
+    fn test_preheader_serialization() {
+        let block_header = BlockHeader {
+            version: 0,
             prev_block: Hash::from_hex(
-                "0101010101010101010101010101010101010101010101010101010101010101",
+                "00000000000057919601ead28513e11afb2cb5d6b4f9ebb0e2a3eeae353d21ef",
             )
             .unwrap(),
             merkle_root: Hash::from_hex(
-                "0101010101010101010101010101010101010101010101010101010101010101",
+                "a25e36543911eb25fb2f9c0187261ebce7bf71229aac631d74535fcd67504463",
             )
             .unwrap(),
             witness_root: Hash::from_hex(
-                "0202020202020202020202020202020202020202020202020202020202020202",
+                "fb442499ab4d7dc32240af3543194d9d4508ed71a461c5a37e902b7c6c626192",
             )
             .unwrap(),
             tree_root: Hash::from_hex(
-                "0303030303030303030303030303030303030303030303030303030303030303",
+                "0000000000000000000000000000000000000000000000000000000000000000",
             )
             .unwrap(),
             reserved_root: Hash::from_hex(
-                "0404040404040404040404040404040404040404040404040404040404040404",
+                "0000000000000000000000000000000000000000000000000000000000000000",
             )
             .unwrap(),
-            extra_nonce: Buffer::from_hex("050505050505050505050505050505050505050505050505")
+            extra_nonce: Buffer::from_hex("27000000000000000000000098f5d2f557a4f9a23d4dcc25")
                 .unwrap(),
             mask: Hash::from_hex(
-                "0606060606060606060606060606060606060606060606060606060606060606",
+                "00000000000000858c7deed002d37f20cf44bebc2ae8abbf56a0fcae340f4ba7",
             )
             .unwrap(),
-            time: 0,
-            bits: 0,
-            nonce: 0,
+            time: 1580832487,
+            bits: 453068266,
+            nonce: 102224329,
         };
 
-        dbg!(block_header.share_hash());
+        let padding = block_header.padding(32);
+        let expected_padding = Buffer::from_hex("00000000000057919601ead28513e11afb2cb5d6b4f9ebb0e2a3eeae353d21ef").unwrap();
+        assert_eq!(padding, expected_padding);
 
-        // let pow = block_header.verify_pow();
 
-        // assert!(pow);
+        let expected_subhead = Buffer::from_hex("27000000000000000000000098f5d2f557a4f9a23d4dcc250000000000000000000000000000000000000000000000000000000000000000fb442499ab4d7dc32240af3543194d9d4508ed71a461c5a37e902b7c6c626192a25e36543911eb25fb2f9c0187261ebce7bf71229aac631d74535fcd6750446300000000ea45011b").unwrap();
+
+        let subhead = block_header.to_subhead();
+        assert_eq!(subhead, expected_subhead);
+
+        let expected_prehead = Buffer::from_hex("c9d11706e796395e0000000000000000000057919601ead28513e11afb2cb5d600000000000057919601ead28513e11afb2cb5d6b4f9ebb0e2a3eeae353d21ef0000000000000000000000000000000000000000000000000000000000000000888d23ddee49560b017d675a21c6adc5de1a08f45c30dbc94cbbb8168faab495").unwrap();
+
+        let prehead = block_header.to_prehead();
+        assert_eq!(prehead, expected_prehead);
     }
 
-    // #[test]
-    // fn test_headers_verify_pow_2() {
-    //let nonce_bytes =
-    //    hex::decode("9e45f30200000000000000000000000000000000000000000000000000000000")
-    //        .unwrap();
+    #[test]
+    fn test_check_header_pow() {
+        let block_header = BlockHeader {
+            version: 0,
+            prev_block: Hash::from_hex(
+                "00000000000057919601ead28513e11afb2cb5d6b4f9ebb0e2a3eeae353d21ef",
+            )
+            .unwrap(),
+            merkle_root: Hash::from_hex(
+                "a25e36543911eb25fb2f9c0187261ebce7bf71229aac631d74535fcd67504463",
+            )
+            .unwrap(),
+            witness_root: Hash::from_hex(
+                "fb442499ab4d7dc32240af3543194d9d4508ed71a461c5a37e902b7c6c626192",
+            )
+            .unwrap(),
+            tree_root: Hash::from_hex(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            )
+            .unwrap(),
+            reserved_root: Hash::from_hex(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+            )
+            .unwrap(),
+            extra_nonce: Buffer::from_hex("27000000000000000000000098f5d2f557a4f9a23d4dcc25")
+                .unwrap(),
+            mask: Hash::from_hex(
+                "00000000000000858c7deed002d37f20cf44bebc2ae8abbf56a0fcae340f4ba7",
+            )
+            .unwrap(),
+            time: 1580832487,
+            bits: 453068266,
+            nonce: 102224329,
+        };
 
-    //let block_header = BlockHeader {
-    //    version: 0,
-    //    prev_blockhash: Hash::from(
-    //        "3bf6e7d1ac019692790cf617ec155dd6254fb010468fa5d1b91979cb7362d247",
-    //    ),
-    //    merkle_root: Hash::from(
-    //        "80f80dc13cd18c520f5322b2b8fbbad5b96f45945331eff3c8c032137c80d274",
-    //    ),
-    //    witness_root: Hash::from(
-    //        "44edb180cd43fca87c1c692c947381e4476c67d673b8f086a0cc783f43be379f",
-    //    ),
-    //    tree_root: Hash::from(
-    //        "fc1bda0f826d2bb09536d42fd8beb327ac0c8c60322ce78bbfc2af2cbec4cf4d",
-    //    ),
-    //    filter_root: Hash::from(
-    //        "0000000000000000000000000000000000000000000000000000000000000000",
-    //    ),
-    //    reserved_root: Hash::from(
-    //        "0000000000000000000000000000000000000000000000000000000000000000",
-    //    ),
-    //    time: 1558043457,
-    //    bits: 489684992,
-    //    nonce: Uint256::from_big_endian(&nonce_bytes),
-    //};
+        let share_hash = block_header.share_hash();
+        let expected_share_hash = Hash::from_hex("000000000000a250786f48a91224e9a8b1b12933466511959572860ab5d77fff").unwrap();
+        assert_eq!(expected_share_hash, share_hash);
 
-    //let pow = block_header.verify_pow();
-
-    //assert!(pow);
-    //}
-
-    //#[test]
-    //fn test_block_header_hash() {
-    ////Test mainnet genesis block
-    //let block_header = BlockHeader {
-    //    version: 0,
-    //    prev_blockhash: Hash::from(
-    //        "0000000000000000000000000000000000000000000000000000000000000000",
-    //    ),
-    //    merkle_root: Hash::from(
-    //        "8e4c9756fef2ad10375f360e0560fcc7587eb5223ddf8cd7c7e06e60a1140b15",
-    //    ),
-    //    witness_root: Hash::from(
-    //        "7c7c2818c605a97178460aad4890df2afcca962cbcb639b812db0af839949798",
-    //    ),
-    //    tree_root: Hash::from(
-    //        "0000000000000000000000000000000000000000000000000000000000000000",
-    //    ),
-    //    filter_root: Hash::from(
-    //        "0000000000000000000000000000000000000000000000000000000000000000",
-    //    ),
-    //    reserved_root: Hash::from(
-    //        "0000000000000000000000000000000000000000000000000000000000000000",
-    //    ),
-
-    //    time: 1554268735,
-    //    bits: 486604799,
-    //    nonce: Uint256::default(),
-    //};
-
-    //// let hex = block_header.as_hex();
-
-    //assert_eq!(hex, "0000000000000000000000000000000000000000000000000000000000000000000000008e4c9756fef2ad10375f360e0560fcc7587eb5223ddf8cd7c7e06e60a1140b157c7c2818c605a97178460aad4890df2afcca962cbcb639b812db0af8399497980000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003f42a45c00000000ffff001d0000000000000000000000000000000000000000000000000000000000000000");
-
-    //let hash = block_header.hash();
-
-    //assert_eq!(
-    //    &hash.to_string(),
-    //    "b08ff0f0e33bca4cd80a7f1dda3f545a00b72a7a144b6b8d1a30150a78f7975c"
-    //);
-    //}
+        let pow = block_header.verify_pow();
+        assert!(pow);
+    }
 }
 
 // /// A block header with txcount attached, which is given in the `headers`

@@ -1,3 +1,4 @@
+#[allow(non_camel_case_types)]
 pub enum Opcode {
     // push value
     OP_0 = 0x00,
