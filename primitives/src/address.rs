@@ -48,6 +48,7 @@ impl fmt::Display for AddressError {
 pub enum Payload {
     PubkeyHash(Buffer),
     ScriptHash(Buffer),
+    Unknown(Buffer),
 }
 
 impl Payload {
@@ -55,6 +56,15 @@ impl Payload {
         match self {
             Payload::PubkeyHash(hash) => hash.len(),
             Payload::ScriptHash(hash) => hash.len(),
+            Payload::Unknown(hash) => hash.len(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Payload::PubkeyHash(hash) => hash.is_empty(),
+            Payload::ScriptHash(hash) => hash.is_empty(),
+            Payload::Unknown(hash) => hash.is_empty(),
         }
     }
 
@@ -62,6 +72,7 @@ impl Payload {
         match self {
             Payload::PubkeyHash(hash) => hash,
             Payload::ScriptHash(hash) => hash,
+            Payload::Unknown(hash) => hash,
         }
     }
 
@@ -69,6 +80,7 @@ impl Payload {
         match self {
             Payload::PubkeyHash(hash) => hash,
             Payload::ScriptHash(hash) => hash,
+            Payload::Unknown(hash) => hash,
         }
     }
 
@@ -76,7 +88,7 @@ impl Payload {
         match hash.len() {
             20 => Ok(Payload::PubkeyHash(hash)),
             32 => Ok(Payload::ScriptHash(hash)),
-            _ => Err(AddressError::InvalidHash),
+            _ => Ok(Payload::Unknown(hash)),
         }
     }
 }
@@ -345,5 +357,12 @@ mod tests {
         dbg!(&addr);
 
         dbg!(addr.to_bech32());
+    }
+
+    #[test]
+    fn test_from_unknown() {
+        let addr = Address::from_str("hs1lqqqqhuxwgy");
+
+        dbg!(addr);
     }
 }
