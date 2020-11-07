@@ -51,10 +51,10 @@ pub struct BlockTemplateJSON {
     pub transactions: Vec<TransactionEntry>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct VbAvailable {}
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct CoinbaseAux {
     pub flags: String,
 }
