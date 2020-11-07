@@ -1,7 +1,7 @@
 use extended_primitives::{Buffer, Hash, Uint256};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct BlockTemplateJSON {
     //@todo custom type here.
     pub capabilities: Vec<String>,
